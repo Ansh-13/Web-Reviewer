@@ -1,0 +1,277 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Website Reviewer | AI-Powered Audit Platform">
+  <div class="home-container">
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="logo">
+        <span class="logo-icon">✨</span>
+        <span class="logo-text">WebReviewer</span>
+      </div>
+      <nav class="nav-links">
+        <a href="/login" class="nav-link">Log In</a>
+        <a href="/signup" class="btn btn-nav">Get Started</a>
+      </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <main class="hero">
+      <div class="hero-content">
+        <div class="badge">Astro 6.0 + Firebase Auth</div>
+        <h1>Analyze & Review Your Websites Instantly</h1>
+        <p class="hero-subtitle">
+          Get actionable AI feedback on your site's design, SEO, copy, and performance. Create an account to save your reports.
+        </p>
+        <div class="cta-group">
+          <a href="/signup" class="btn btn-primary">Start Free Audit</a>
+          <a href="/login" class="btn btn-secondary">Sign In</a>
+        </div>
+      </div>
+
+      <!-- Feature Grid -->
+      <div class="features">
+        <div class="feature-card">
+          <span class="feature-icon">🔍</span>
+          <h3>SEO Audits</h3>
+          <p>Instantly check page titles, headings, and semantic structures.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3>Performance</h3>
+          <p>Measure speed metrics, bundle optimizations, and layout stability.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔒</span>
+          <h3>Secure Platform</h3>
+          <p>Verified backend Express APIs utilizing secure Firebase tokens.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&copy; {new Date().getFullYear()} WebReviewer. All rights reserved.</p>
+    </footer>
+  </div>
+</Layout>
+
+<style>
+  /* Premium Landing Styling */
+  :root {
+    --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1e1b4b 100%);
+    --card-bg: rgba(31, 41, 55, 0.4);
+    --card-border: rgba(255, 255, 255, 0.05);
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+  }
+
+  .home-container {
+    min-height: 100vh;
+    background: var(--bg-gradient);
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Navbar */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 8%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .logo-text {
+    background: linear-gradient(to right, #ffffff, #c7d2fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+  }
+
+  /* Hero Section */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 8% 40px;
+    text-align: center;
+  }
+
+  .hero-content {
+    max-width: 800px;
+    margin-bottom: 64px;
+  }
+
+  .badge {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0 0 20px;
+    letter-spacing: -0.03em;
+    background: linear-gradient(to bottom, #ffffff 40%, #e0e7ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 38px;
+    }
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto 36px;
+    line-height: 1.6;
+  }
+
+  .cta-group {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-nav {
+    padding: 8px 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+  }
+
+  .btn-nav:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .btn-primary {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Feature Grid */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 24px;
+  }
+
+  .feature-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 32px;
+    text-align: left;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.2);
+  }
+
+  .feature-icon {
+    font-size: 28px;
+    display: inline-block;
+    margin-bottom: 16px;
+  }
+
+  .feature-card h3 {
+    font-size: 18px;
+    margin: 0 0 8px 0;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+</style>
