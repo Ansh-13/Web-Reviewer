@@ -3,6 +3,7 @@ import { adminAuth } from "../config/firebase";
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
+    console.log(authHeader)
     if (!authHeader?.startsWith("Bearer ")) {
         return res.status(401).json({
             error:

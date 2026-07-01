@@ -8,7 +8,7 @@ const projectRouter = express.Router();
 // Create new Project
 projectRouter.post("/api/v1/create", requireAuth, async (req, res) => {
     const project_name = req.headers.project_name;
-    const profile_id = req.headers.profile_id;
+    const profile_id = res.locals.user?.uid;
     const description = req.headers.description;
 
     if (!project_name) {
@@ -24,14 +24,26 @@ projectRouter.post("/api/v1/create", requireAuth, async (req, res) => {
         return res.status(409).json("Please Provide unique Project Name")
     }
     if (!data) {
-        const { data, error } = await supabase.from("projects").insert({ "profile_id": profile_id, "name": project_name, "description": description });
 
-        if (error) {
-            return res.status(400).json({ "Cannot add not project": error })
+        const { data: userData, error: userError } = await supabase.from("profiles").select("id").eq("firebase_uid", profile_id).maybeSingle()
+
+        if (userError) {
+            return res.status(400).json({ "Cannot find the user in Supabase": userError })
         }
-        res.status(200).json("Project Added Succesfully");
-    }
 
+        if (!userData) {
+            return res.status(401).json("Please SignIn Before making this request")
+        }
+
+        if (userData) {
+            const { data, error } = await supabase.from("projects").insert({ "profile_id": userData.id, "name": project_name, "description": description });
+
+            if (error) {
+                return res.status(400).json({ "Cannot add not project": error })
+            }
+            return res.status(200).json("Project Added Succesfully");
+        }
+    }
 })
 
 export default projectRouter;
