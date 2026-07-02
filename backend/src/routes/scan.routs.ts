@@ -2,10 +2,12 @@ import express from "express"
 import supabase from "../config/supabase";
 import { profile } from "node:console";
 import { requireAuth } from "../middleware/auth";
+import { crawl } from "../services/crawler/crawler";
+import { seoAnalyser } from "../services/seo/seo.service";
 
 const scanRouter = express.Router()
 
-//Project is pending in this
+
 scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
     const rawurl = req.headers.url;
     const project_name = req.headers.project_name;
@@ -15,7 +17,6 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
 
     const { data: user, error: err, status, statusText } = await supabase.from("profiles").select("id").eq("firebase_uid", profile_id).single()
 
-    console.log("Supabase profile query →", { status, statusText, err, user });
 
     if (err) {
         return res.status(401).json("User not found")
@@ -50,10 +51,16 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
             return res.status(400).json({ "Some Went Wrong": error })
         }
 
+
+        const html = await crawl(url, profile_id);
+        const website_info = await seoAnalyser(parseUrl.href, html);
+
         res.json({
             message: "Scan is Pending",
             url: parseUrl.href
         });
+
+        
 
     } catch (err) {
         return res.json({ status: 400, error: "SomeThing with the URL" })
