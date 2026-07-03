@@ -6,7 +6,7 @@ export async function crawl(url: string, user_id: string) {
     try {
         await page.goto(url, { waitUntil: "networkidle" });
         const html: string = await page.content();
-        console.log(html)
+        // console.log(html)
         return html;
     }
     finally {

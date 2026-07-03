@@ -1,9 +1,8 @@
 import express from "express"
 import supabase from "../config/supabase";
-import { profile } from "node:console";
 import { requireAuth } from "../middleware/auth";
 import { crawl } from "../services/crawler/crawler";
-import { seoAnalyser } from "../services/seo/seo.service";
+import { extractWebsiteInfo } from "../services/seo/extractor";
 
 const scanRouter = express.Router()
 
@@ -45,7 +44,7 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
             return res.status(400).json({ error: "URL should be of HTTP or HTTPS Protocol only" })
         }
 
-        const { data, error } = await supabase.from("scans").insert({ url: parseUrl, status: "Pending", project_id: projectData?.id });
+        const { data, error } = await supabase.from("scans").insert({ url: parseUrl.href, status: "Pending", project_id: projectData?.id });
 
         if (error) {
             return res.status(400).json({ "Some Went Wrong": error })
@@ -53,18 +52,21 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
 
 
         const html = await crawl(url, profile_id);
-        const website_info = await seoAnalyser(parseUrl.href, html);
-
+        const website_info = await extractWebsiteInfo(parseUrl.href, html);
+        console.log(website_info)
         res.json({
             message: "Scan is Pending",
-            url: parseUrl.href
+            url: parseUrl.href  
         });
 
-        
-
     } catch (err) {
-        return res.json({ status: 400, error: "SomeThing with the URL" })
+        console.error(err);
+
+        return res.status(400).json({
+            error: err instanceof Error ? err.message : String(err)
+        });
     }
+
 })
 
 export default scanRouter
