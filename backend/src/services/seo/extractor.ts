@@ -161,7 +161,16 @@ export async function extractWebsiteInfo(page : string, html : string) {
             : null,
 
         url:
-            $('meta[property="og:url"]').attr("content") ?? null
+            $('meta[property="og:url"]').attr("content") ?? null,
+
+        type:
+            $('meta[property="og:type"]').attr("content") ?? null,
+
+        siteName:
+            $('meta[property="og:site_name"]').attr("content") ?? null,
+
+        locale:
+            $('meta[property="og:locale"]').attr("content") ?? null
     };
 
     // ========================
@@ -233,6 +242,51 @@ export async function extractWebsiteInfo(page : string, html : string) {
         $('link[rel*="icon"]').attr("href") ||
         $('link[rel="shortcut icon"]').attr("href") ||
         null;
+
+    // ========================
+    // Hreflang / International
+    // ========================
+    const hreflang = $('link[rel="alternate"][hreflang]')
+        .map((_, el) => ({
+            href: $(el).attr("href") || null,
+            hreflang: $(el).attr("hreflang") || null,
+        }))
+        .get();
+
+    // ========================
+    // Semantic HTML Landmarks
+    // ========================
+    const semanticHtml = {
+        hasNav: $("nav").length > 0,
+        hasMain: $("main").length > 0,
+        hasHeader: $("header").length > 0,
+        hasFooter: $("footer").length > 0,
+        hasAside: $("aside").length > 0,
+        hasArticle: $("article").length > 0,
+        hasSection: $("section").length > 0,
+    };
+
+    // ========================
+    // Text Content Metrics
+    // ========================
+    const bodyText = $("body").clone()
+        .find("script, style, noscript").remove().end()
+        .text().replace(/\s+/g, " ").trim();
+
+    const contentMetrics = {
+        wordCount: bodyText.length > 0 ? bodyText.split(/\s+/).length : 0,
+        characterCount: bodyText.length,
+        paragraphCount: $("p").length,
+    };
+
+    // ========================
+    // Accessibility
+    // ========================
+    const accessibility = {
+        ariaLabels: $("[aria-label]").length,
+        ariaRoles: $("[role]").length,
+        tabindexElements: $("[tabindex]").length,
+    };
 
     // return {
     //     url: baseUrl,
@@ -409,7 +463,18 @@ export async function extractWebsiteInfo(page : string, html : string) {
             .map((_, el) => $(el).attr("href"))
             .get()
             .filter(Boolean)
-    }
+    },
+
+    hreflang: {
+        count: hreflang.length,
+        items: hreflang
+    },
+
+    semanticHtml,
+
+    contentMetrics,
+
+    accessibility
 };
 
 }

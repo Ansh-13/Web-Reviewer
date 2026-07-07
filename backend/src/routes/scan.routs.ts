@@ -1,8 +1,11 @@
 import express from "express"
+import fs from "fs"
 import supabase from "../config/supabase";
 import { requireAuth } from "../middleware/auth";
 import { crawl } from "../services/crawler/crawler";
 import { extractWebsiteInfo } from "../services/seo/extractor";
+import {seoScore} from "../services/seo/seoScore.services"
+
 
 const scanRouter = express.Router()
 
@@ -49,24 +52,31 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
         if (error) {
             return res.status(400).json({ "Some Went Wrong": error })
         }
-
-
+        
+        
+        const start_time = Date.now();
         const html = await crawl(url, profile_id);
+        fs.writeFileSync("crawled_page.html", html);
         const website_info = await extractWebsiteInfo(parseUrl.href, html);
-        console.log(website_info)
+        const seo_score = await seoScore(website_info);
+        const end_time = Date.now();
+        
         res.json({
-            message: "Scan is Pending",
-            url: parseUrl.href  
+            url: parseUrl.href,
+            scanDurationMs: end_time - start_time,
+            score: seo_score.score,
+            grade: seo_score.grade,
+            summary: seo_score.summary,
+            results: seo_score.results,
         });
-
+        
     } catch (err) {
         console.error(err);
-
+        
         return res.status(400).json({
             error: err instanceof Error ? err.message : String(err)
         });
     }
-
 })
 
 export default scanRouter

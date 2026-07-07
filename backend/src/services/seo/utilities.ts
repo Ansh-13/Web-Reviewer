@@ -9,6 +9,6 @@ export function hasValue(data:string) : boolean{
 }
 
 export function appropiateLength(data:string,max:number,min:number) : boolean {
-    if(data.length < 30 || data.length > 60) return false;
-    return true;
+    if(data.length < min || data.length > max) return true;
+    return false;
 }
