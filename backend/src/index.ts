@@ -23,9 +23,9 @@ app.use(cors({
 app.use(express.json());
 
 
-app.use("/users", UserRouter)
-app.use("/scan", scanRouter)
-app.use("/projects", projectRouter)
+app.use(UserRouter)
+app.use(scanRouter)
+app.use(projectRouter)
 
 
 app.get("/api/health", (req, res) => {

@@ -6,19 +6,17 @@ import { crawl } from "../services/crawler/crawler";
 import { extractWebsiteInfo } from "../services/seo/extractor";
 import {seoScore} from "../services/seo/seoScore.services"
 
-
 const scanRouter = express.Router()
-
 
 scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
     const rawurl = req.headers.url;
     const project_name = req.headers.project_name;
     const profile_id = res.locals.user?.uid;
 
+
     console.log("UID from middleware:", profile_id);
 
     const { data: user, error: err, status, statusText } = await supabase.from("profiles").select("id").eq("firebase_uid", profile_id).single()
-
 
     if (err) {
         return res.status(401).json("User not found")
@@ -47,20 +45,54 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
             return res.status(400).json({ error: "URL should be of HTTP or HTTPS Protocol only" })
         }
 
-        const { data, error } = await supabase.from("scans").insert({ url: parseUrl.href, status: "Pending", project_id: projectData?.id });
-
-        if (error) {
-            return res.status(400).json({ "Some Went Wrong": error })
-        }
-        
-        
         const start_time = Date.now();
+        const { data : scanDetail, error  : scanDetailError } = await supabase
+            .from("scans")
+            .insert({ 
+                url: parseUrl.href, 
+                status: "Pending", 
+                project_id: projectData?.id, 
+                started_at: new Date(start_time).toISOString() // Use ISO string for timestamps
+            })
+            .select("id")
+            .single();
+
+        if (scanDetailError) {
+            console.error("Error inserting scan:", scanDetailError);
+            return res.status(400).json({ error: `Database insert failed: ${scanDetailError.message}` });
+        }
+
+        console.log("Inserted scan ID:", scanDetail.id);
+
         const html = await crawl(url, profile_id);
         fs.writeFileSync("crawled_page.html", html);
         const website_info = await extractWebsiteInfo(parseUrl.href, html);
         const seo_score = await seoScore(website_info);
         const end_time = Date.now();
         
+        const { error: updateError } = await supabase
+            .from("scans")
+            .update({ 
+                status: "Completed", 
+                completed_at: new Date(end_time).toISOString() // Use ISO string for timestamps
+            })
+            .eq("id", scanDetail.id);
+        
+        if (updateError) {
+            console.error("Error updating scan status:", updateError);
+        }
+        
+        const { error: scanResultError } = await supabase
+            .from("scan_results")
+            .insert({ 
+                scan_id: scanDetail.id, 
+                seo: seo_score 
+            });
+
+        if (scanResultError) {
+            console.error("Error inserting scan results:", scanResultError);
+        }
+
         res.json({
             url: parseUrl.href,
             scanDurationMs: end_time - start_time,
@@ -71,12 +103,66 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
         });
         
     } catch (err) {
-        console.error(err);
-        
+        console.error("Scan general handler caught error:", err);
+
         return res.status(400).json({
             error: err instanceof Error ? err.message : String(err)
         });
     }
+})
+
+scanRouter.get("/api/v1/getScan", requireAuth, async(req,res) => {
+    const user_id = res.locals.user?.uid;
+    const project_name = req.headers.project_name;
+
+    if(!project_name)
+    {
+        return res.status(400).json("Project Name is required");
+    }
+
+    const {data : projectData, error : projectError} = await supabase.from("projects").select("id, profile_id").eq("name",project_name).maybeSingle();
+
+    if(projectError){
+        console.log("projectError:", projectError)
+    }
+
+    const {data : profile_Data, error : profileError} = await supabase.from("profiles").select("id, firebase_uid").eq("id",projectData?.profile_id).maybeSingle();
+
+    
+    if(profileError){
+        console.log("profileError:", profileError)
+    }
+
+    const {data : scanDetail, error : scanError} = await supabase.from("scans").select("id, url,status").eq("project_id",projectData?.id);
+
+    if(scanError){
+        console.log("scanError:", scanError)
+    }
+
+    if(!projectData?.id){
+        return res.status(200).json("Enter the url to get the scan result of you website");
+    }
+
+    return res.status(200).json({data : scanDetail })
+})
+
+
+scanRouter.get("/api/v1/getScanResults", requireAuth, async(req,res) => {
+    const scan_id = req.headers.scan_id;
+
+    if (!scan_id) {
+        console.log("Error: scan_id header is missing");
+        return res.status(400).json({ error: "scan_id header is required" });
+    }
+
+    const {data : scanResult, error : scanError} = await supabase.from("scan_results").select("seo").eq("scan_id",scan_id);
+
+    if(scanError)
+    {
+        return res.status(402).json({ error: scanError.message });
+    }
+
+    return res.status(200).json({data : scanResult})
 })
 
 export default scanRouter

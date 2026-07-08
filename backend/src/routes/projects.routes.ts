@@ -46,4 +46,32 @@ projectRouter.post("/api/v1/create", requireAuth, async (req, res) => {
     }
 })
 
+projectRouter.get("/api/v1/getprojects", requireAuth, async(req, res) => {
+    const user_id = res.locals.user?.uid;
+
+    const {data : userData , error : userError} = await supabase.from("profiles").select("id").eq("firebase_uid",user_id).maybeSingle();
+
+    if(userData == null){
+        return res.status(401).json("Please login before creating Projects");
+    }
+
+    if(userError){
+        console.log(userError)
+    }
+
+    const { data, error} = await supabase.from("projects").select("name").eq("profile_id",userData.id);
+    console.log(data)
+
+    if(error){
+        console.log(error)
+    }
+
+    if(!data)
+    {
+        return res.json("Please create a Project");
+    }
+
+    res.status(200).json({data});
+})
+
 export default projectRouter;
