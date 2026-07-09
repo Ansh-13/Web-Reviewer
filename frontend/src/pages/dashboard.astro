@@ -139,6 +139,17 @@ import Layout from '../layouts/Layout.astro';
 
     currentToken = await user.getIdToken();
 
+    // Register/sync user profile in backend database
+    try {
+      await fetch('http://localhost:3000/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${currentToken}`
+        }
+      });
+    } catch (e) {
+      console.error('Failed to sync profile with database:', e);
+    }
+
     pageLoader.classList.add('hidden');
     contentArea.classList.remove('hidden');
 

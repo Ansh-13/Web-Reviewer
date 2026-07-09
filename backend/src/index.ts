@@ -4,7 +4,6 @@ dotenv.config();
 import express from "express";
 const app = express();
 
-
 import cors from "cors";
 import { requireAuth } from "./middleware/auth";
 import supabase from "./config/supabase";
@@ -13,6 +12,7 @@ import supabase from "./config/supabase";
 import UserRouter from "./routes/auth.routes";
 import scanRouter from "./routes/scan.routs";
 import projectRouter from "./routes/projects.routes";
+import AIRouter from "./routes/AI.routes";
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,11 +22,10 @@ app.use(cors({
 }))
 app.use(express.json());
 
-
 app.use(UserRouter)
 app.use(scanRouter)
 app.use(projectRouter)
-
+app.use(AIRouter)
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
