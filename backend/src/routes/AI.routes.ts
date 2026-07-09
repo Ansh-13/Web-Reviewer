@@ -24,12 +24,12 @@ AIRouter.get("/api/v1/ai/",requireAuth, async(req,res) => {
     if (!scanResult || scanResult.length === 0) {
         return res.status(404).json("Scan result not found");
     }
-
+    // console.log(scanResult)
     const prompt : string =  buildSeoPrompt(scanResult);
-
+    // console.log(prompt)
     const response = await genrateSeoResponse(prompt);
-
-    return res.status(200).json({Data : response})
+    console.log(response?.text)
+    return res.status(200).json({Data : response?.text})
 
 })
 
