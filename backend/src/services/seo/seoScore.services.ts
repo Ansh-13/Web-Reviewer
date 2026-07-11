@@ -62,11 +62,17 @@ export async function seoScore(data : WebsiteInfo){
     const errors = allResults.filter(r => r.severity === "error" && !r.passed);
     const warnings = allResults.filter(r => r.severity === "warning" && !r.passed);
     const passed = allResults.filter(r => r.passed);
-
+    
     // Score: start at 100, deduct for failures
     const errorPenalty = 10;   // each error costs 10 points
     const warningPenalty = 5;  // each warning costs 5 points
-    const score = Math.max(0, 100 - (errors.length * errorPenalty) - (warnings.length * warningPenalty));
+    // const score = Math.max(0, 100 - (errors.length * errorPenalty) - (warnings.length * warningPenalty));
+    let score = 0;
+    allResults.map( (s) => {
+        score += s.score;
+    } )
+
+    score = 100 + score;
 
     // Assign letter grade
     const grade = score >= 90 ? "A"

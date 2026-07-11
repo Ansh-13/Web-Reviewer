@@ -67,7 +67,7 @@ export class CanonicalRule implements SeoRule<WebsiteInfo> {
                 title: "Canonical URL differs from page URL",
                 passed: true,
                 severity: "info",
-                score: 5,
+                score: 0,
                 message: `Canonical points to "${canonical}" which differs from the current page URL. This is valid for consolidated duplicate pages.`,
             };
         }
@@ -78,7 +78,7 @@ export class CanonicalRule implements SeoRule<WebsiteInfo> {
             title: "Canonical URL",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: "Self-referencing canonical URL is properly set.",
         };
     }

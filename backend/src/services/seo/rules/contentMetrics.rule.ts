@@ -45,7 +45,7 @@ export class ContentMetricsRule implements SeoRule<WebsiteInfo> {
                 title: "Moderate content length",
                 passed: true,
                 severity: "info",
-                score: 5,
+                score: 0,
                 message: `The page has ${metrics.wordCount} words across ${metrics.paragraphCount} paragraphs. Content is above the thin-content threshold but could benefit from more depth.`,
                 recommendation:
                     "Consider expanding content with additional detail, examples, or FAQs to improve topical authority.",
@@ -58,7 +58,7 @@ export class ContentMetricsRule implements SeoRule<WebsiteInfo> {
             title: "Content depth",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Strong content: ${metrics.wordCount} words across ${metrics.paragraphCount} paragraphs.`,
         };
     }

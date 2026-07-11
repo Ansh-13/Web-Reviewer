@@ -100,7 +100,7 @@ export class RobotsRule implements SeoRule<WebsiteInfo> {
             title: "Robots directives",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Robots meta tag is set to "${robots}". The page is indexable and crawlable.`,
         };
     }

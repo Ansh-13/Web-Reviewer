@@ -15,11 +15,13 @@ AIRouter.get("/api/v1/ai/",requireAuth, async(req,res) => {
     }
 
     const {data : scanResult, error : scanResuktError} = await supabase.from("scan_results").select("seo").eq("scan_id",scan_ID);
-
+    
     if(scanResuktError)
     {
         return res.status(400).json({"Something went wrong" : scanResuktError});
     }
+
+    
 
     if (!scanResult || scanResult.length === 0) {
         return res.status(404).json("Scan result not found");

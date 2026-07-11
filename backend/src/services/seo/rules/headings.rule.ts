@@ -93,7 +93,7 @@ export class HeadingsRule implements SeoRule<WebsiteInfo> {
             title: "Heading structure",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Heading structure is well-formed: 1 H1, ${h2Count} H2s, ${h3Count} H3s.`,
         };
     }

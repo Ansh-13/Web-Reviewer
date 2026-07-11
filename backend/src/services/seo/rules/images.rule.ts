@@ -93,7 +93,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
                 title: "Images missing explicit dimensions",
                 passed: true,
                 severity: "info",
-                score: 5,
+                score: 0,
                 message: `All images have alt text ✓ but ${missingDimCount} of ${images.count} lack explicit width/height, which can cause layout shifts (CLS).`,
                 recommendation:
                     "Add width and height attributes to images to reduce Cumulative Layout Shift.",
@@ -106,7 +106,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
             title: "Image optimization",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `All ${images.count} images have alt text. ${lazyLoaded.length} use lazy loading. ${images.count - missingDimCount} have explicit dimensions.`,
         };
     }

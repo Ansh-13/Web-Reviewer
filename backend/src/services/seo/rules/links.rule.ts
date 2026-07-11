@@ -55,20 +55,20 @@ export class LinksRule implements SeoRule<WebsiteInfo> {
             };
         }
 
-        // Excessive total links (> 200) — link equity dilution
-        if (totalLinks > 200) {
-            return {
-                id: "too-many-links",
-                category: "Navigation",
-                title: "Excessive number of links",
-                passed: false,
-                severity: "warning",
-                score: -3,
-                message: `The page contains ${totalLinks} links (${internalCount} internal, ${externalCount} external). An extremely high link count dilutes the value of each link.`,
-                recommendation:
-                    "Consider reducing the number of links on the page. Keep navigation focused and relevant.",
-            };
-        }
+        // // Excessive total links (> 200) — link equity dilution
+        // if (totalLinks > 200) {
+        //     return {
+        //         id: "too-many-links",
+        //         category: "Navigation",
+        //         title: "Excessive number of links",
+        //         passed: false,
+        //         severity: "warning",
+        //         score: 0,
+        //         message: `The page contains ${totalLinks} links (${internalCount} internal, ${externalCount} external). An extremely high link count dilutes the value of each link.`,
+        //         recommendation:
+        //             "Consider reducing the number of links on the page. Keep navigation focused and relevant.",
+        //     };
+        // }
 
         return {
             id: "links-ok",
@@ -76,7 +76,7 @@ export class LinksRule implements SeoRule<WebsiteInfo> {
             title: "Link structure",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Good link profile: ${internalCount} internal links and ${externalCount} external links.`,
         };
     }

@@ -56,7 +56,7 @@ export class SemanticHtmlRule implements SeoRule<WebsiteInfo> {
                 title: "Missing <nav> landmark",
                 passed: true,
                 severity: "info",
-                score: 5,
+                score: 0,
                 message:
                     "No <nav> element found. Using <nav> helps search engines identify navigation sections and improves accessibility.",
                 recommendation:
@@ -70,7 +70,7 @@ export class SemanticHtmlRule implements SeoRule<WebsiteInfo> {
             title: "Semantic HTML structure",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Good semantic structure: using ${usedCount} HTML5 landmark elements (${[
                 s.hasNav && "nav",
                 s.hasMain && "main",

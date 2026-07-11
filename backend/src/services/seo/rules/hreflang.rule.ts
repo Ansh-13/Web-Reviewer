@@ -68,7 +68,7 @@ export class HreflangRule implements SeoRule<WebsiteInfo> {
             title: "Hreflang configuration",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Properly configured: ${hreflang.count} hreflang tags with self-reference and x-default.`,
         };
     }

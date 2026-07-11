@@ -42,7 +42,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
                 title: "Missing Twitter Card meta tags",
                 passed: true,
                 severity: "info",
-                score: 5,
+                score: 0,
                 message: `Open Graph is configured (${ogPopulated}/4 fields) but no Twitter Card meta tags found. Twitter will fall back to OG tags, but dedicated Twitter cards offer better control.`,
                 recommendation:
                     "Add twitter:card, twitter:title, twitter:description, and twitter:image for optimized Twitter/X previews.",
@@ -86,7 +86,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
             title: "Social sharing meta",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Social meta is well-configured: ${ogPopulated}/4 OG fields and ${twPopulated}/4 Twitter Card fields populated.`,
         };
     }

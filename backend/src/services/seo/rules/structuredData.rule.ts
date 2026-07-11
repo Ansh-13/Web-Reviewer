@@ -70,7 +70,7 @@ export class StructuredDataRule implements SeoRule<WebsiteInfo> {
             title: "Structured data",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Found ${structuredData.count} valid JSON-LD block(s) with types: ${uniqueTypes.join(", ")}.`,
         };
     }

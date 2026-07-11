@@ -63,7 +63,7 @@ export class DescriptionRule implements SeoRule<WebsiteInfo> {
             title: "Meta description",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message: `Meta description is present and has an optimal length (${description!.length} characters).`,
         };
     }

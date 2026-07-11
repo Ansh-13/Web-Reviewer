@@ -86,7 +86,7 @@ export class ViewportRule implements SeoRule<WebsiteInfo> {
             title: "Viewport configuration",
             passed: true,
             severity: "info",
-            score: 10,
+            score: 0,
             message:
                 "Viewport is properly configured with device-width and initial-scale for responsive mobile rendering.",
         };
