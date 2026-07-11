@@ -8,6 +8,7 @@ export class LinksRule implements SeoRule<WebsiteInfo> {
         const totalLinks = links.count;
         const internalCount = links.internal.length;
         const externalCount = links.external.length;
+        const content = JSON.stringify(links);
 
         // No links at all — very unusual and bad for SEO
         if (totalLinks === 0) {
@@ -22,6 +23,7 @@ export class LinksRule implements SeoRule<WebsiteInfo> {
                     "The page contains no hyperlinks. Internal linking is critical for crawlability and link equity distribution.",
                 recommendation:
                     "Add internal links to related pages and consider adding relevant external links to authoritative sources.",
+                content,
             };
         }
 
@@ -37,6 +39,7 @@ export class LinksRule implements SeoRule<WebsiteInfo> {
                 message: `The page has ${externalCount} external links but no internal links. This limits crawlability and SEO value flow.`,
                 recommendation:
                     "Add internal links to other relevant pages on your site to improve navigation and distribute page authority.",
+                content,
             };
         }
 
@@ -52,6 +55,7 @@ export class LinksRule implements SeoRule<WebsiteInfo> {
                 message: `Only ${internalCount} internal link(s) found. A strong internal linking strategy helps search engines discover and rank your pages.`,
                 recommendation:
                     "Add more contextual internal links to improve site structure and crawlability.",
+                content,
             };
         }
 
@@ -78,6 +82,7 @@ export class LinksRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: `Good link profile: ${internalCount} internal links and ${externalCount} external links.`,
+            content,
         };
     }
 }

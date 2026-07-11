@@ -5,6 +5,7 @@ import { RuleResult } from "../rules";
 export class StructuredDataRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const structuredData = data.structuredData;
+        const content = JSON.stringify(structuredData);
 
         // No structured data at all
         if (structuredData.count === 0) {
@@ -19,6 +20,7 @@ export class StructuredDataRule implements SeoRule<WebsiteInfo> {
                     "The page contains no JSON-LD structured data. Structured data enables rich snippets in search results (star ratings, breadcrumbs, FAQs, etc.).",
                 recommendation:
                     "Add relevant Schema.org JSON-LD markup (e.g., Organization, WebPage, Article, Product, FAQ) to enhance search result appearance.",
+                content,
             };
         }
 
@@ -38,6 +40,7 @@ export class StructuredDataRule implements SeoRule<WebsiteInfo> {
                 message: `${invalidSchemas.length} of ${structuredData.count} JSON-LD blocks contain invalid JSON and will be ignored by search engines.`,
                 recommendation:
                     "Validate and fix the malformed JSON-LD blocks. Use Google's Rich Results Test to verify your structured data.",
+                content,
             };
         }
 
@@ -57,6 +60,7 @@ export class StructuredDataRule implements SeoRule<WebsiteInfo> {
                 message: `Found ${structuredData.count} JSON-LD block(s) but none contain a @type property. Without @type, search engines cannot interpret the data.`,
                 recommendation:
                     "Ensure every JSON-LD block has a @type property (e.g., \"Organization\", \"WebPage\", \"Article\").",
+                content,
             };
         }
 
@@ -72,6 +76,7 @@ export class StructuredDataRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: `Found ${structuredData.count} valid JSON-LD block(s) with types: ${uniqueTypes.join(", ")}.`,
+            content,
         };
     }
 }

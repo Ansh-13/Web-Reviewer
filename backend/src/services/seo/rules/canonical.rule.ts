@@ -6,6 +6,7 @@ import { isNULL } from "../utilities";
 export class CanonicalRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const canonical = data.metadata.canonical;
+        const content = data.url;
 
         if (isNULL(canonical)) {
             return {
@@ -19,6 +20,7 @@ export class CanonicalRule implements SeoRule<WebsiteInfo> {
                     "No <link rel=\"canonical\"> tag found. Search engines may index duplicate versions of this page.",
                 recommendation:
                     "Add a canonical link element pointing to the preferred URL for this page.",
+                content,
             };
         }
 
@@ -37,6 +39,7 @@ export class CanonicalRule implements SeoRule<WebsiteInfo> {
                     message: `Canonical URL uses an unsupported protocol: "${url.protocol}".`,
                     recommendation:
                         "Use an absolute URL with http:// or https:// as the canonical.",
+                    content,
                 };
             }
         } catch {
@@ -50,6 +53,7 @@ export class CanonicalRule implements SeoRule<WebsiteInfo> {
                 message: `The canonical URL "${canonical}" is not a valid URL.`,
                 recommendation:
                     "Ensure the canonical href is a fully-qualified absolute URL (e.g., https://example.com/page).",
+                content,
             };
         }
 
@@ -69,6 +73,7 @@ export class CanonicalRule implements SeoRule<WebsiteInfo> {
                 severity: "info",
                 score: 0,
                 message: `Canonical points to "${canonical}" which differs from the current page URL. This is valid for consolidated duplicate pages.`,
+                content,
             };
         }
 
@@ -80,6 +85,7 @@ export class CanonicalRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: "Self-referencing canonical URL is properly set.",
+            content,
         };
     }
 }

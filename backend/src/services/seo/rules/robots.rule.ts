@@ -6,6 +6,7 @@ import { isNULL } from "../utilities";
 export class RobotsRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const robots = data.metadata.robots;
+        const content = robots || "";
 
         // No robots meta tag — not a critical error, but a missed opportunity
         if (isNULL(robots)) {
@@ -20,6 +21,7 @@ export class RobotsRule implements SeoRule<WebsiteInfo> {
                     "No <meta name=\"robots\"> tag found. By default, search engines will index and follow links on this page.",
                 recommendation:
                     "Consider adding a robots meta tag for explicit crawl directives, especially on pages you want to exclude from indexing.",
+                content,
             };
         }
 
@@ -46,6 +48,7 @@ export class RobotsRule implements SeoRule<WebsiteInfo> {
                     "The robots meta tag contains \"none\", which prevents indexing AND link following. This page will not appear in search results.",
                 recommendation:
                     "Remove the \"none\" directive unless you intentionally want this page completely hidden from search engines.",
+                content,
             };
         }
 
@@ -61,6 +64,7 @@ export class RobotsRule implements SeoRule<WebsiteInfo> {
                     "The page is set to noindex AND nofollow. It will not be indexed and its outgoing links will not be crawled.",
                 recommendation:
                     "Remove noindex/nofollow unless this page should be completely excluded from search engines.",
+                content,
             };
         }
 
@@ -76,6 +80,7 @@ export class RobotsRule implements SeoRule<WebsiteInfo> {
                     "The page has a \"noindex\" directive. It will not appear in search engine results.",
                 recommendation:
                     "Verify this is intentional. Remove \"noindex\" if you want this page to rank in search results.",
+                content,
             };
         }
 
@@ -91,6 +96,7 @@ export class RobotsRule implements SeoRule<WebsiteInfo> {
                     "The page has a \"nofollow\" directive. Search engines will not follow or pass link equity through any links on this page.",
                 recommendation:
                     "Remove \"nofollow\" unless you have a specific reason to prevent link equity flow from this page.",
+                content,
             };
         }
 
@@ -102,6 +108,7 @@ export class RobotsRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: `Robots meta tag is set to "${robots}". The page is indexable and crawlable.`,
+            content,
         };
     }
 }

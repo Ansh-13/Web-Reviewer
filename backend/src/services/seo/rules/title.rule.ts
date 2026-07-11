@@ -8,6 +8,7 @@ export class TitleRule
         analyze(data: WebsiteInfo): RuleResult {
             
             let title = data.metadata.title;
+            const content = title || "";
             
             if(isNULL(title)){
                 return {
@@ -18,6 +19,7 @@ export class TitleRule
                 severity: "error",
                 score: -10,
                 message: "The page does not contain a <title> tag.",
+                content,
                 }
             }
             else if(!hasValue(title!))
@@ -30,6 +32,7 @@ export class TitleRule
                 severity: "error",
                 score: -10,
                 message: "The page contain empty  <title> tag.",
+                content,
                 }
             }
             else if(appropiateLength(title!,60,30)){
@@ -41,6 +44,7 @@ export class TitleRule
                 passed: false,
                 score: -5,
                 message: `The title contains ${title!.length} characters. Recommended length is 30–60 characters.`,
+                content,
                 }
             }
             else{
@@ -52,6 +56,7 @@ export class TitleRule
                 severity: "info",
                 score: 0,
                 message: "The page title is present and has an optimal length.",
+                content,
                 }
             }
         }

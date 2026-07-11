@@ -5,6 +5,7 @@ import { RuleResult } from "../rules";
 export class ImagesRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const images = data.media.images;
+        const content = JSON.stringify(images);
 
         // No images at all — not necessarily bad, but worth noting
         if (images.count === 0) {
@@ -17,6 +18,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
                 score: 0,
                 message:
                     "The page contains no <img> elements. Images can improve user engagement and appear in image search results.",
+                content,
             };
         }
 
@@ -52,6 +54,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
                 message: `All ${images.count} images are missing alt attributes. This hurts accessibility and image search indexing.`,
                 recommendation:
                     "Add descriptive alt text to every meaningful image. Use alt=\"\" only for purely decorative images.",
+                content,
             };
         }
 
@@ -67,6 +70,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
                 message: `${missingAltCount} of ${images.count} images (${missingAltPercent}%) lack alt text.`,
                 recommendation:
                     "Add descriptive alt text to images. Good alt text describes the image content concisely.",
+                content,
             };
         }
 
@@ -82,6 +86,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
                 message: `${missingAltCount} of ${images.count} images lack alt text.`,
                 recommendation:
                     "Add descriptive alt text to the remaining images for better accessibility and SEO.",
+                content,
             };
         }
 
@@ -97,6 +102,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
                 message: `All images have alt text ✓ but ${missingDimCount} of ${images.count} lack explicit width/height, which can cause layout shifts (CLS).`,
                 recommendation:
                     "Add width and height attributes to images to reduce Cumulative Layout Shift.",
+                content,
             };
         }
 
@@ -108,6 +114,7 @@ export class ImagesRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: `All ${images.count} images have alt text. ${lazyLoaded.length} use lazy loading. ${images.count - missingDimCount} have explicit dimensions.`,
+            content,
         };
     }
 }

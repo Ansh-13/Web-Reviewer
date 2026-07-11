@@ -7,4 +7,5 @@ export interface RuleResult {
     score: number;
     message: string;
     recommendation?: string;
+    content:String;
 }

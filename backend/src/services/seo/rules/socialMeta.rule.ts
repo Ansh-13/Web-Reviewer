@@ -6,6 +6,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const og = data.social.openGraph;
         const tw = data.social.twitter;
+        const content = JSON.stringify(data.social);
 
         // Count how many OG fields are populated
         const ogFields = [og.title, og.description, og.image, og.url];
@@ -31,6 +32,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
                     "The page has no Open Graph or Twitter Card meta tags. Links shared on social media will display generic previews with no image, title, or description control.",
                 recommendation:
                     "Add at minimum: og:title, og:description, og:image, and og:url for rich social sharing previews.",
+                content,
             };
         }
 
@@ -46,6 +48,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
                 message: `Open Graph is configured (${ogPopulated}/4 fields) but no Twitter Card meta tags found. Twitter will fall back to OG tags, but dedicated Twitter cards offer better control.`,
                 recommendation:
                     "Add twitter:card, twitter:title, twitter:description, and twitter:image for optimized Twitter/X previews.",
+                content,
             };
         }
 
@@ -62,6 +65,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
                     "No og:image meta tag found. Social shares without an image get significantly lower engagement and click-through rates.",
                 recommendation:
                     "Add an og:image tag with a 1200×630px image for optimal display across social platforms.",
+                content,
             };
         }
 
@@ -77,6 +81,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
                 message: `Only ${totalPopulated} of ${totalFields} social meta fields are populated. Incomplete tags result in inconsistent social sharing previews.`,
                 recommendation:
                     "Complete all Open Graph (og:title, og:description, og:image, og:url) and Twitter Card (twitter:card, twitter:title, twitter:description, twitter:image) tags.",
+                content,
             };
         }
 
@@ -88,6 +93,7 @@ export class SocialMetaRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: `Social meta is well-configured: ${ogPopulated}/4 OG fields and ${twPopulated}/4 Twitter Card fields populated.`,
+            content,
         };
     }
 }

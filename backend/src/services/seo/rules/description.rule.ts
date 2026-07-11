@@ -6,6 +6,7 @@ import { isNULL, hasValue, appropiateLength } from "../utilities";
 export class DescriptionRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const description = data.metadata.description;
+        const content = description || "";
 
         if (isNULL(description)) {
             return {
@@ -19,6 +20,7 @@ export class DescriptionRule implements SeoRule<WebsiteInfo> {
                     "The page does not contain a <meta name=\"description\"> tag.",
                 recommendation:
                     "Add a unique, compelling meta description between 120–160 characters that summarizes the page content.",
+                content,
             };
         }
 
@@ -34,6 +36,7 @@ export class DescriptionRule implements SeoRule<WebsiteInfo> {
                     "The <meta name=\"description\"> tag exists but has no content.",
                 recommendation:
                     "Write a descriptive summary of 120–160 characters for the meta description.",
+                content,
             };
         }
 
@@ -54,6 +57,7 @@ export class DescriptionRule implements SeoRule<WebsiteInfo> {
                 message: `${detail} Recommended length is 120–160 characters.`,
                 recommendation:
                     "Rewrite the meta description to fall within 120–160 characters.",
+                content,
             };
         }
 
@@ -65,6 +69,7 @@ export class DescriptionRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: `Meta description is present and has an optimal length (${description!.length} characters).`,
+            content,
         };
     }
 }

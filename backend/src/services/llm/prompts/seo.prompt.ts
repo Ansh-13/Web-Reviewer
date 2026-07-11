@@ -1,8 +1,64 @@
+import { AIContext } from "../../types/AI-seo-info";
+import { RuleResult } from "../../seo/rules";
+
 export function buildSeoPrompt(report : any) : string{
+    // Extract the seo object from scanResult database query array format
+    const seo = Array.isArray(report) ? (report[0]?.seo || report[0]) : report;
 
-    const reportString = typeof report == 'string' ? report : JSON.stringify(report,null,2);
+    // Retrieve all rule checks to extract metadata
+    const allChecks: RuleResult[] = [
+        ...(seo?.results?.errors || []),
+        ...(seo?.results?.warnings || []),
+        ...(seo?.results?.passed || [])
+    ];
 
-    console.log(reportString)
+    // Extrapolate page info from rule content properties
+    const titleCheck = allChecks.find(c => c.id.startsWith("title") || c.id === "missing-title");
+    const titleText = titleCheck ? (titleCheck.content as string) : null;
+
+    const descCheck = allChecks.find(c => c.id.startsWith("description") || c.id === "missing-description");
+    const descText = descCheck ? (descCheck.content as string) : null;
+
+    const canonicalCheck = allChecks.find(c => c.id.startsWith("canonical") || c.id === "missing-canonical");
+    const url = canonicalCheck ? (canonicalCheck.content as string) : "";
+
+    const headingsCheck = allChecks.find(c => c.id.startsWith("headings") || c.id.startsWith("missing-h1") || c.id.startsWith("multiple-h1") || c.id.startsWith("h1-too-short"));
+    let h1Text: string | null = null;
+    if (headingsCheck && headingsCheck.content) {
+        try {
+            const parsedHeadings = JSON.parse(headingsCheck.content as string);
+            h1Text = parsedHeadings.h1?.tags?.[0] || null;
+        } catch (e) {
+            console.error("Failed to parse headings content in prompt builder", e);
+        }
+    }
+
+    // Filter failed checks (errors & warnings) as the issues
+    const issues: RuleResult[] = [
+        ...(seo?.results?.errors || []),
+        ...(seo?.results?.warnings || [])
+    ];
+
+    // Build the AIContext object in exact form
+    const aiContext: AIContext = {
+        score: seo?.score ?? 0,
+        grade: seo?.grade ?? "F",
+        page: {
+            url: url,
+            title: titleText,
+            description: descText,
+            h1: h1Text
+        },
+        summary: {
+            errors: seo?.summary?.errors ?? 0,
+            warnings: seo?.summary?.warnings ?? 0,
+            passed: seo?.summary?.passed ?? 0
+        },
+        issues: issues
+    };
+
+    const reportString = JSON.stringify(aiContext, null, 2);
+    console.log("Constructed AIContext Report:\n", reportString);
 
     const prompt = 
     `
@@ -20,6 +76,12 @@ export function buildSeoPrompt(report : any) : string{
         6. NEVER suggest additional problems beyond the supplied findings.
         7. If a rule is not present, assume nothing about it.
         8. Use only the provided score, grade, summary, and issues.
+        9. Generate an example based only on the information available. If there isn't enough context, use the content in h1 element.
+
+        If there is not enough context to generate page-specific code,
+        return a generic implementation example instead.
+
+        Never invent business information that is not present in the input.
 
         Your responsibilities are ONLY to:
 
@@ -27,6 +89,10 @@ export function buildSeoPrompt(report : any) : string{
         - Explain why it matters.
         - Suggest a practical fix.
         - Prioritize the issues by impact.
+
+        For Excecutive summary:
+
+        -Keep it under 100 words
 
         For every recommendation:
 

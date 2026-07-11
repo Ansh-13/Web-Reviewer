@@ -5,6 +5,7 @@ import { RuleResult } from "../rules";
 export class ContentMetricsRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const metrics = data.contentMetrics;
+        const content = JSON.stringify(metrics);
 
         // No text content at all
         if (metrics.wordCount === 0) {
@@ -19,6 +20,7 @@ export class ContentMetricsRule implements SeoRule<WebsiteInfo> {
                     "The page contains no visible text content. Search engines cannot rank a page without indexable text.",
                 recommendation:
                     "Add meaningful text content to the page. If content is loaded via JavaScript, ensure it renders in the HTML.",
+                content,
             };
         }
 
@@ -34,6 +36,7 @@ export class ContentMetricsRule implements SeoRule<WebsiteInfo> {
                 message: `The page has only ${metrics.wordCount} words. Pages with less than 300 words are considered thin content by Google's Helpful Content guidelines.`,
                 recommendation:
                     "Expand the page content to at least 300+ words. Focus on depth, value, and relevance to the topic.",
+                content,
             };
         }
 
@@ -49,6 +52,7 @@ export class ContentMetricsRule implements SeoRule<WebsiteInfo> {
                 message: `The page has ${metrics.wordCount} words across ${metrics.paragraphCount} paragraphs. Content is above the thin-content threshold but could benefit from more depth.`,
                 recommendation:
                     "Consider expanding content with additional detail, examples, or FAQs to improve topical authority.",
+                content,
             };
         }
 
@@ -60,6 +64,7 @@ export class ContentMetricsRule implements SeoRule<WebsiteInfo> {
             severity: "info",
             score: 0,
             message: `Strong content: ${metrics.wordCount} words across ${metrics.paragraphCount} paragraphs.`,
+            content,
         };
     }
 }

@@ -5,6 +5,7 @@ import { RuleResult } from "../rules";
 export class SemanticHtmlRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const s = data.semanticHtml;
+        const content = JSON.stringify(s);
 
         // Count how many semantic landmarks are used
         const landmarks = [
@@ -30,6 +31,7 @@ export class SemanticHtmlRule implements SeoRule<WebsiteInfo> {
                     "The page uses no semantic HTML5 landmarks (<nav>, <main>, <header>, <footer>, <article>, <section>). Search engines use semantic structure for passage ranking and content understanding.",
                 recommendation:
                     "Replace generic <div> wrappers with appropriate semantic elements like <main>, <nav>, <header>, and <footer>.",
+                content,
             };
         }
 
@@ -45,6 +47,7 @@ export class SemanticHtmlRule implements SeoRule<WebsiteInfo> {
                 message: `The page uses ${usedCount} semantic elements but is missing <main>. The <main> landmark identifies the primary content area for search engines and screen readers.`,
                 recommendation:
                     "Wrap the primary page content in a <main> element.",
+                content,
             };
         }
 
@@ -61,6 +64,7 @@ export class SemanticHtmlRule implements SeoRule<WebsiteInfo> {
                     "No <nav> element found. Using <nav> helps search engines identify navigation sections and improves accessibility.",
                 recommendation:
                     "Wrap navigation menus in <nav> elements with descriptive aria-labels.",
+                content,
             };
         }
 
@@ -81,6 +85,7 @@ export class SemanticHtmlRule implements SeoRule<WebsiteInfo> {
             ]
                 .filter(Boolean)
                 .join(", ")}).`,
+            content,
         };
     }
 }

@@ -6,6 +6,7 @@ import { isNULL } from "../utilities";
 export class ViewportRule implements SeoRule<WebsiteInfo> {
     analyze(data: WebsiteInfo): RuleResult {
         const viewport = data.metadata.viewport;
+        const ruleContent = viewport || "";
 
         // No viewport meta tag — mobile-unfriendly
         if (isNULL(viewport)) {
@@ -20,6 +21,7 @@ export class ViewportRule implements SeoRule<WebsiteInfo> {
                     "No <meta name=\"viewport\"> tag found. Without it, the page will not render properly on mobile devices, which significantly hurts mobile SEO.",
                 recommendation:
                     "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> to the <head>.",
+                content: ruleContent,
             };
         }
 
@@ -47,6 +49,7 @@ export class ViewportRule implements SeoRule<WebsiteInfo> {
                 message: `Viewport is set to "${viewport}" but does not include "width=device-width". The page may not adapt to mobile screens.`,
                 recommendation:
                     "Set viewport width to \"device-width\" for proper mobile rendering.",
+                content: ruleContent,
             };
         }
 
@@ -62,6 +65,7 @@ export class ViewportRule implements SeoRule<WebsiteInfo> {
                     "The viewport meta tag disables or restricts user zooming. This is an accessibility issue that can also affect mobile SEO.",
                 recommendation:
                     "Remove \"user-scalable=no\" and \"maximum-scale=1\" to allow pinch-to-zoom on mobile devices.",
+                content: ruleContent,
             };
         }
 
@@ -77,6 +81,7 @@ export class ViewportRule implements SeoRule<WebsiteInfo> {
                     "Viewport has width=device-width but no initial-scale. Some older browsers may not render optimally.",
                 recommendation:
                     "Add \"initial-scale=1\" to the viewport meta tag for maximum browser compatibility.",
+                content: ruleContent,
             };
         }
 
@@ -89,6 +94,7 @@ export class ViewportRule implements SeoRule<WebsiteInfo> {
             score: 0,
             message:
                 "Viewport is properly configured with device-width and initial-scale for responsive mobile rendering.",
+            content: ruleContent,
         };
     }
 }
