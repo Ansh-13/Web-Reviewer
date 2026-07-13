@@ -2,7 +2,8 @@ import express from "express";
 import { requireAuth } from "../middleware/auth";
 import supabase from "../config/supabase";
 import { compareReport } from "../services/report_comparison/compareReports";
-
+import { genratereportcomparisonResponse } from "../services/llm/report-comparison.service";
+import { buildreportcomparisonPrompt } from "../services/llm/prompts/report-comparison.prompt";
 const ComparisonRouter = express.Router();
 
 ComparisonRouter.get("/api/v1/report-comparison", requireAuth, async (req, res) => {
@@ -44,16 +45,33 @@ ComparisonRouter.get("/api/v1/report-comparison", requireAuth, async (req, res) 
             return res.status(404).json({ error: `Current scan result not found for ID: ${currscanid}` });
         }
 
-        const prevScanData = prevscanResult[0]?.seo;
-        const currScanData = currscanResult[0]?.seo;
+        let prevScanData = prevscanResult[0]?.seo;
+        let currScanData = currscanResult[0]?.seo;
+
+        if (typeof prevScanData === 'string') {
+            try { prevScanData = JSON.parse(prevScanData); } catch(e) {}
+        }
+        if (typeof currScanData === 'string') {
+            try { currScanData = JSON.parse(currScanData); } catch(e) {}
+        }
+
+        console.log(prevScanData.result)
 
         if (!prevScanData || !currScanData) {
             return res.status(400).json({ error: "Invalid scan result data found in database" });
         }
 
         const output = compareReport(currScanData, prevScanData);
+        const prompt = buildreportcomparisonPrompt(output);
+        const aiResponse = await genratereportcomparisonResponse(prompt);
 
-        return res.status(200).json({ data: output });
+        // Extract plain text from the Gemini response object
+        const aiText = aiResponse?.candidates?.[0]?.content?.parts?.[0]?.text
+            ?? aiResponse?.text
+            ?? null;
+
+        return res.status(200).json({ aiReport: aiText, data: output });
+
     } catch (err) {
         console.error("Error comparing reports:", err);
         return res.status(500).json({ error: err instanceof Error ? err.message : String(err) });

@@ -165,4 +165,41 @@ scanRouter.get("/api/v1/getScanResults", requireAuth, async(req,res) => {
     return res.status(200).json({data : scanResult})
 })
 
+scanRouter.get("/api/v1/getProjectScans", requireAuth, async(req, res) => {
+    const scan_id = req.query.scan_id as string;
+
+    if (!scan_id) {
+        return res.status(400).json({ error: "scan_id query parameter is required" });
+    }
+
+    try {
+        // Get the project_id for the given scan
+        const { data: scanData, error: scanError } = await supabase
+            .from("scans")
+            .select("project_id, url")
+            .eq("id", scan_id)
+            .single();
+
+        if (scanError || !scanData) {
+            return res.status(404).json({ error: "Scan not found" });
+        }
+
+        // Get all completed scans for that project
+        const { data: projectScans, error: projectScansError } = await supabase
+            .from("scans")
+            .select("id, url, status, started_at")
+            .eq("project_id", scanData.project_id)
+            .in("status", ["Completed", "Done", "completed", "done"])
+            .order("started_at", { ascending: false });
+
+        if (projectScansError) {
+            return res.status(500).json({ error: projectScansError.message });
+        }
+
+        return res.status(200).json({ data: projectScans || [] });
+    } catch (err) {
+        return res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+})
+
 export default scanRouter
