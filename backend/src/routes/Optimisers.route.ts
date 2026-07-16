@@ -13,25 +13,27 @@ optimisersRouter.post("/api/v1/optimiser",requireAuth, async (req,res) => {
 
     if(!scanid || !rule)
     {
-        res.status(402).json("Parameters are missing")
+        return res.status(402).json("Parameters are missing")
     }
 
     try{
 
-        const {data : snapshot, error : snapshotError} = await supabase.from("scan").select("Website_snapshot").eq("id",scanid).single();
+        // Fetch scan details (to get the URL/HTML if needed, using 'scans' table)
+        const {data : snapshot, error : snapshotError} = await supabase.from("scans").select("*").eq("id",scanid).single();
         
-        const {data : seoReport, error : seoReportError} = await supabase.from("scan_results").select("seo").eq("id",scanid).single();
+        // Fetch SEO report using 'scan_id' foreign key
+        const {data : seoReport, error : seoReportError} = await supabase.from("scan_results").select("seo").eq("scan_id",scanid).single();
 
         if(snapshotError)
         {
-            console.log(`Error while fetching the snapshot : ${snapshotError}`)
-            res.status(402).json("SomeThing wrong with optimiser snapshot")
+            console.log(`Error while fetching the snapshot : ${snapshotError.message || snapshotError}`)
+            return res.status(402).json("Something went wrong with optimiser snapshot: " + (snapshotError.message || ""));
         }
 
         if(seoReportError)
         {
-            console.log(`Error while fetching the snapshot : ${snapshotError}`)
-            res.status(402).json("SomeThing wrong with optimiser seo report")
+            console.log(`Error while fetching the seo report : ${seoReportError.message || seoReportError}`)
+            return res.status(402).json("Something went wrong with optimiser seo report: " + (seoReportError.message || ""));
         }
 
         const RuleResult = getRuleById(seoReport,rule)
@@ -52,3 +54,5 @@ optimisersRouter.post("/api/v1/optimiser",requireAuth, async (req,res) => {
         return res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 })
+
+export default optimisersRouter;
