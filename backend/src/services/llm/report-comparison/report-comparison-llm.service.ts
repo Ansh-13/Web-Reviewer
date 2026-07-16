@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config()
-import {google_gemini_llm} from "./providers/gemini.provider"
+import {google_gemini_llm} from "../providers/gemini.provider"
 
 export async function genrateSeoResponse(Data:string) {
     try {

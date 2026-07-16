@@ -1,8 +1,8 @@
 import express, { Router } from "express";
 import { requireAuth } from "../middleware/auth";
-import {buildSeoPrompt} from "../services/llm/prompts/seo.prompt"
+import {buildSeoPrompt} from "../services/seo/seo.prompt"
 import supabase from "../config/supabase";
-import {genrateSeoResponse} from "../services/llm/llm.service"
+import {genrateSeoResponse} from "../services/llm/report-comparison/report-comparison-llm.service"
 
 
 const AIRouter =  Router();

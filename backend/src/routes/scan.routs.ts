@@ -5,14 +5,15 @@ import { requireAuth } from "../middleware/auth";
 import { crawl } from "../services/crawler/crawler";
 import { extractWebsiteInfo } from "../services/seo/extractor";
 import {seoScore} from "../services/seo/seoScore.services"
+import {convertToWebsiteSnapshot} from '../transformers/website-snapshot'
 
 const scanRouter = express.Router()
 
 scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
+
     const rawurl = req.headers.url;
     const project_name = req.headers.project_name;
     const profile_id = res.locals.user?.uid;
-
 
     console.log("UID from middleware:", profile_id);
 
@@ -61,7 +62,6 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
             console.error("Error inserting scan:", scanDetailError);
             return res.status(400).json({ error: `Database insert failed: ${scanDetailError.message}` });
         }
-
         console.log("Inserted scan ID:", scanDetail.id);
 
         const html = await crawl(url, profile_id);
@@ -69,12 +69,13 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
         const website_info = await extractWebsiteInfo(parseUrl.href, html);
         const seo_score = await seoScore(website_info);
         const end_time = Date.now();
-        
+        const snapshot = convertToWebsiteSnapshot(website_info)
         const { error: updateError } = await supabase
             .from("scans")
             .update({ 
                 status: "Completed", 
-                completed_at: new Date(end_time).toISOString() // Use ISO string for timestamps
+                completed_at: new Date(end_time).toISOString(),
+                website_snapshot: snapshot
             })
             .eq("id", scanDetail.id);
         

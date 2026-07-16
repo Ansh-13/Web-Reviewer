@@ -1,5 +1,3 @@
-
-
 export interface OptimizerContext {
     issue: {
         id: string;

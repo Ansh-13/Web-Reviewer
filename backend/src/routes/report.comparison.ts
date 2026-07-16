@@ -1,9 +1,9 @@
 import express from "express";
 import { requireAuth } from "../middleware/auth";
 import supabase from "../config/supabase";
-import { compareReport } from "../services/report_comparison/compareReports";
-import { genratereportcomparisonResponse } from "../services/llm/report-comparison.service";
-import { buildreportcomparisonPrompt } from "../services/llm/prompts/report-comparison.prompt";
+import { compareReport } from "../services/llm/report-comparison/compareReports";
+import { genratereportcomparisonResponse } from "../services/llm/report-comparison/report-comparison.service";
+import { buildreportcomparisonPrompt } from "../services/llm/report-comparison/report-comparison.prompt";
 const ComparisonRouter = express.Router();
 
 ComparisonRouter.get("/api/v1/report-comparison", requireAuth, async (req, res) => {

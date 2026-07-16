@@ -1,8 +1,9 @@
 import { RuleResult } from "../../seo/rules";
+import { WebsiteSnapshot } from "../../types/website-info";
 import { OptimizerContext } from "./optimizer.types";
 
 export function buildContext(
-    snapshotData: any,
+    snapshot: WebsiteSnapshot,
     issue: RuleResult
 ): OptimizerContext {
 
@@ -17,7 +18,10 @@ export function buildContext(
     return {
         issue: baseIssue,
         page: {
-            url: snapshotData?.url || "Unknown URL",
+            url: snapshot?.url || "Unknown URL",
+            images: snapshot?.media?.images?.items?.filter(
+                (img: any) => !img.alt
+            ),
         },
     };
 }

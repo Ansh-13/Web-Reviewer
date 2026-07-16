@@ -1,5 +1,5 @@
-import { AIContext } from "../../types/AI-seo-info";
-import { RuleResult } from "../../seo/rules";
+import { AIContext } from "../types/AI-seo-info";
+import { RuleResult } from "./rules";
 
 export function buildSeoPrompt(report : any) : string{
     // Extract the seo object from scanResult database query array format

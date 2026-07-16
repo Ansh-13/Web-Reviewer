@@ -1,5 +1,5 @@
-import { ComparisonResult, RuleChange, ChangeGroup } from "../types/Report-Comparison";
-import { RuleResult } from "../seo/rules";
+import { ComparisonResult, RuleChange, ChangeGroup } from "../../types/Report-Comparison";
+import { RuleResult } from "../../seo/rules";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
