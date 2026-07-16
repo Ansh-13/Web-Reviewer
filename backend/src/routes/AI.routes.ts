@@ -4,6 +4,7 @@ import {buildSeoPrompt} from "../services/llm/prompts/seo.prompt"
 import supabase from "../config/supabase";
 import {genrateSeoResponse} from "../services/llm/llm.service"
 
+
 const AIRouter =  Router();
 
 AIRouter.get("/api/v1/ai/",requireAuth, async(req,res) => {
@@ -26,9 +27,7 @@ AIRouter.get("/api/v1/ai/",requireAuth, async(req,res) => {
     }
 
     const prompt : string =  buildSeoPrompt(scanResult);
-    // console.log(prompt)
     const response = await genrateSeoResponse(prompt);
-    console.log(response?.text)
     return res.status(200).json({Data : response?.text})
 
 })

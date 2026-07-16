@@ -65,7 +65,7 @@ export function buildSeoPrompt(report : any) : string{
         You are an experienced Technical SEO Consultant.
 
         Your task is to explain the findings produced by an automated SEO rule engine.
-
+        
         IMPORTANT RULES
 
         1. The rule engine is the ONLY source of truth.

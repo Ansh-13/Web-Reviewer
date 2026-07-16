@@ -13,7 +13,11 @@ import UserRouter from "./routes/auth.routes";
 import scanRouter from "./routes/scan.routs";
 import projectRouter from "./routes/projects.routes";
 import AIRouter from "./routes/AI.routes";
+<<<<<<< HEAD
 import optimisersRouter from "./routes/Optimisers.route";
+=======
+import ComparisonRouter from "./routes/report.comparison";
+>>>>>>> Report-Comparison
 
 const PORT = process.env.PORT || 3000;
 
@@ -27,7 +31,11 @@ app.use(UserRouter)
 app.use(scanRouter)
 app.use(projectRouter)
 app.use(AIRouter)
+<<<<<<< HEAD
 app.use(optimisersRouter)
+=======
+app.use(ComparisonRouter)
+>>>>>>> Report-Comparison
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
