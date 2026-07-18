@@ -19,7 +19,7 @@ optimisersRouter.post("/api/v1/optimiser",requireAuth, async (req,res) => {
     try{
 
         // Fetch scan details (to get the URL/HTML if needed, using 'scans' table)
-        const {data : snapshot, error : snapshotError} = await supabase.from("scans").select("*").eq("id",scanid).single();
+        const {data : snapshot, error : snapshotError} = await supabase.from("scans").select("website_snapshot").eq("id",scanid).single();
         
         // Fetch SEO report using 'scan_id' foreign key
         const {data : seoReport, error : seoReportError} = await supabase.from("scan_results").select("seo").eq("scan_id",scanid).single();
@@ -35,17 +35,33 @@ optimisersRouter.post("/api/v1/optimiser",requireAuth, async (req,res) => {
             console.log(`Error while fetching the seo report : ${seoReportError.message || seoReportError}`)
             return res.status(402).json("Something went wrong with optimiser seo report: " + (seoReportError.message || ""));
         }
+        // Extract and parse the SEO data if it's a string
+        let seoData = seoReport?.seo;
+        if (typeof seoData === 'string') {
+            try {
+                seoData = JSON.parse(seoData);
+            } catch(e) {
+                console.error("Error parsing seoReport.seo:", e);
+            }
+        }
 
-        const RuleResult = getRuleById(seoReport,rule)
-        const optimiser_prompt = AiOptimiserPrompt(snapshot,RuleResult!);
+        let websiteSnapshot = snapshot?.website_snapshot;
+        if (typeof websiteSnapshot === 'string') {
+            try {
+                websiteSnapshot = JSON.parse(websiteSnapshot);
+            } catch(e) {
+                console.error("Error parsing websiteSnapshot:", e);
+            }
+        }
+
+        const RuleResult = getRuleById(seoData, rule);
+        const optimiser_prompt = AiOptimiserPrompt(websiteSnapshot, RuleResult!);
 
         const response = await genratereportcomparisonResponse(optimiser_prompt)
-
-
         const aiText = response?.candidates?.[0]?.content?.parts?.[0]?.text
             ?? response?.text
             ?? null;
-
+        console.log(aiText)
         return res.status(200).json( aiText );
     }   
     catch(err)

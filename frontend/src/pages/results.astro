@@ -374,7 +374,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="check-item ${type}">
           <span class="check-icon">${type === 'pass' ? '✓' : type === 'error' ? '✕' : '⚠'}</span>
           <div class="check-body">
-            <span class="check-name">${r.name || r.check || 'Audit Check'}</span>
+            <span class="check-name">${r.title || r.name || r.check || 'Audit Check'}</span>
             ${r.message ? `<span class="check-msg">${r.message}</span>` : ''}
           </div>
         </div>
@@ -389,8 +389,9 @@ import Layout from '../layouts/Layout.astro';
     let optimiserOptions = '<option value="">Select an issue to optimise...</option>';
     const allIssues = [...errorsList, ...warningsList];
     allIssues.forEach(item => {
-      const name = item.name || item.check || 'Audit Check';
-      optimiserOptions += `<option value="${name}">${name}</option>`;
+      const title = item.title || item.name || item.check || 'Audit Check';
+      const id = item.id || '';
+      optimiserOptions += `<option value="${id}">${title}</option>`;
     });
     optimiserRuleSelect.innerHTML = optimiserOptions;
   }
@@ -495,29 +496,529 @@ import Layout from '../layouts/Layout.astro';
   });
 
   function renderAiTextInsightsForOptimiser(text: string) {
-    const paragraphs = text
-      .split('\n\n')
-      .map(p => {
-        const trimmed = p.trim();
-        if (!trimmed) return '';
-        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
-          const listItems = trimmed
-            .split('\n')
-            .map(li => `<li>${li.replace(/^[-*]\s*/, '')}</li>`)
-            .join('');
-          return `<ul>${listItems}</ul>`;
+    // 1. Clean and parse JSON
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+    }
+    
+    let data: any = null;
+    try {
+      data = JSON.parse(cleanText);
+    } catch (e) {
+      // Relaxed JSON parsing
+      const jsonStart = cleanText.indexOf('{');
+      const jsonEnd = cleanText.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        try {
+          data = JSON.parse(cleanText.substring(jsonStart, jsonEnd + 1));
+        } catch (innerError) {
+          console.error("Failed relaxed JSON parsing:", innerError);
         }
-        if (trimmed.startsWith('#')) {
-          const level = (trimmed.match(/^#+/) || ['#'])[0].length;
-          const cleanText = trimmed.replace(/^#+\s*/, '');
-          return `<h${Math.min(level + 2, 6)}>${cleanText}</h${Math.min(level + 2, 6)}>`;
-        }
-        return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
-      })
-      .filter(Boolean)
-      .join('');
+      }
+    }
 
-    optimiserOutput.innerHTML = `<div class="ai-raw-text">${paragraphs}</div>`;
+    // 2. Render UI
+    const titleText = data?.recommendationTitle || data?.title;
+    if (data && typeof data === 'object' && titleText) {
+      
+      // Format list of steps helper (handles array or string)
+      const formatSteps = (steps: any): string => {
+        if (!steps) return '';
+        if (Array.isArray(steps)) {
+          const listItems = steps.map(step => `<li>${escapeHTML(step)}</li>`).join('');
+          return `<ol class="opt-steps-list">${listItems}</ol>`;
+        }
+        const stepsStr = String(steps);
+        const lines = stepsStr.split('\n').map(line => line.trim()).filter(Boolean);
+        if (lines.length > 1) {
+          const listItems = lines.map(line => {
+            const cleanLine = line.replace(/^\d+[\.\)]\s*/, '').replace(/^[-*+]\s*/, '');
+            return `<li>${escapeHTML(cleanLine)}</li>`;
+          }).join('');
+          return `<ol class="opt-steps-list">${listItems}</ol>`;
+        }
+        return `<p class="opt-text">${escapeHTML(stepsStr)}</p>`;
+      };
+
+      // Format alternatives helper
+      const renderAlternatives = (alts: any): string => {
+        if (!alts || !Array.isArray(alts) || alts.length === 0) return '';
+        const items = alts.map(alt => `
+          <div class="opt-alternative-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>${escapeHTML(alt)}</span>
+          </div>
+        `).join('');
+        return `<div class="opt-alternatives-container">${items}</div>`;
+      };
+
+      // Format generated content helper
+      const renderGeneratedContent = (content: any): string => {
+        if (!content) return '';
+        if (typeof content === 'string') {
+          return `
+            <div class="opt-meta-table">
+              <div class="opt-meta-row">
+                <span class="opt-meta-key">Recommendation</span>
+                <span class="opt-meta-val">
+                  <span class="opt-meta-val-text">${escapeHTML(content)}</span>
+                  <button class="opt-meta-copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500)">Copy</button>
+                </span>
+              </div>
+            </div>
+          `;
+        }
+        if (typeof content === 'object') {
+          const rows = Object.entries(content).map(([key, val]) => {
+            const formattedKey = key
+              .replace(/_/g, ' ')
+              .replace(/\b\w/g, c => c.toUpperCase());
+            return `
+              <div class="opt-meta-row">
+                <span class="opt-meta-key">${escapeHTML(formattedKey)}</span>
+                <span class="opt-meta-val">
+                  <span class="opt-meta-val-text">${escapeHTML(String(val))}</span>
+                  <button class="opt-meta-copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500)">Copy</button>
+                </span>
+              </div>
+            `;
+          }).join('');
+          return `<div class="opt-meta-table">${rows}</div>`;
+        }
+        return '';
+      };
+
+      const summaryText = data.summary;
+      const reasoningText = data.reasoning;
+      const whyItMattersText = data.whyItMatters || data.why;
+
+      optimiserOutput.innerHTML = `
+        <div class="opt-card">
+          <style>
+            .opt-card {
+              background: rgba(15, 23, 42, 0.45);
+              border: 1px solid rgba(168, 85, 247, 0.25);
+              border-radius: 12px;
+              padding: 24px;
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+              color: var(--text-primary);
+              box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+              backdrop-filter: blur(8px);
+              animation: fadeIn 0.4s ease-out;
+            }
+            
+            @keyframes fadeIn {
+              from { opacity: 0; transform: translateY(8px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+
+            .opt-header {
+              display: flex;
+              align-items: center;
+              gap: 14px;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+              padding-bottom: 16px;
+            }
+
+            .opt-icon-wrapper {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 42px;
+              height: 42px;
+              border-radius: 10px;
+              background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+              border: 1px solid rgba(168, 85, 247, 0.35);
+              color: #c084fc;
+              flex-shrink: 0;
+            }
+
+            .opt-header-text {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+            }
+
+            .opt-badge {
+              font-size: 10px;
+              font-weight: 700;
+              letter-spacing: 0.08em;
+              color: #c084fc;
+              text-transform: uppercase;
+            }
+
+            .opt-header-text h4 {
+              margin: 0;
+              font-size: 17px;
+              font-weight: 700;
+              color: #ffffff;
+              line-height: 1.4;
+            }
+
+            .opt-section {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+
+            .opt-section-title {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              color: rgba(255, 255, 255, 0.9);
+            }
+
+            .opt-section-title svg {
+              color: #818cf8;
+              flex-shrink: 0;
+            }
+
+            .opt-section-title h5 {
+              margin: 0;
+              font-size: 13px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+
+            .opt-text {
+              margin: 0;
+              font-size: 14px;
+              line-height: 1.6;
+              color: rgba(241, 245, 249, 0.85);
+            }
+
+            .opt-text.highlight {
+              background: rgba(168, 85, 247, 0.06);
+              border-left: 3px solid #a855f7;
+              padding: 8px 12px;
+              border-radius: 0 6px 6px 0;
+            }
+
+            .opt-summary-section {
+              background: rgba(255, 255, 255, 0.02);
+              border: 1px dashed rgba(255, 255, 255, 0.12);
+              border-radius: 8px;
+              padding: 14px 18px;
+              font-size: 14px;
+              line-height: 1.5;
+              color: rgba(255, 255, 255, 0.95);
+            }
+
+            .opt-reasoning-section {
+              background: rgba(129, 140, 248, 0.03);
+              border-left: 3px solid #818cf8;
+              padding: 12px 16px;
+              border-radius: 0 8px 8px 0;
+            }
+
+            .opt-why-section {
+              background: rgba(99, 102, 241, 0.03);
+              border-left: 3px solid #6366f1;
+              padding: 12px 16px;
+              border-radius: 0 8px 8px 0;
+            }
+
+            .opt-steps-list {
+              margin: 4px 0 0 0;
+              padding-left: 20px;
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+
+            .opt-steps-list li {
+              font-size: 14px;
+              line-height: 1.55;
+              color: rgba(241, 245, 249, 0.85);
+            }
+
+            .opt-alternatives-container {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+              margin-top: 4px;
+              background: rgba(15, 23, 42, 0.2);
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 8px;
+              padding: 12px 16px;
+            }
+
+            .opt-alternative-item {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              font-size: 13.5px;
+              color: rgba(241, 245, 249, 0.85);
+            }
+
+            .opt-alternative-item svg {
+              flex-shrink: 0;
+            }
+
+            .opt-code-container {
+              position: relative;
+              background: #090d16;
+              border: 1px solid rgba(255, 255, 255, 0.06);
+              border-radius: 8px;
+              overflow: hidden;
+              margin-top: 4px;
+            }
+
+            .opt-code-container pre {
+              margin: 0;
+              padding: 16px;
+              overflow-x: auto;
+            }
+
+            .opt-code-block {
+              font-family: 'Fira Code', 'Courier New', Courier, monospace;
+              font-size: 13px;
+              line-height: 1.5;
+              color: #34d399;
+            }
+
+            .opt-copy-btn {
+              position: absolute;
+              top: 8px;
+              right: 8px;
+              background: rgba(255, 255, 255, 0.06);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 4px;
+              padding: 4px 8px;
+              font-size: 11px;
+              color: rgba(255, 255, 255, 0.7);
+              cursor: pointer;
+              font-family: inherit;
+              transition: all 0.15s;
+            }
+
+            .opt-copy-btn:hover {
+              background: rgba(255, 255, 255, 0.12);
+              color: #ffffff;
+            }
+
+            .opt-meta-table {
+              display: flex;
+              flex-direction: column;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 8px;
+              overflow: hidden;
+              margin-top: 4px;
+              background: rgba(15, 23, 42, 0.2);
+            }
+
+            .opt-meta-row {
+              display: flex;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            .opt-meta-row:last-child {
+              border-bottom: none;
+            }
+
+            .opt-meta-key {
+              width: 140px;
+              padding: 10px 14px;
+              background: rgba(255, 255, 255, 0.03);
+              border-right: 1px solid rgba(255, 255, 255, 0.06);
+              font-size: 11px;
+              font-weight: 700;
+              color: rgba(255, 255, 255, 0.6);
+              text-transform: uppercase;
+              display: flex;
+              align-items: center;
+              flex-shrink: 0;
+            }
+
+            .opt-meta-val {
+              flex: 1;
+              padding: 10px 14px;
+              font-size: 13.5px;
+              color: #38bdf8;
+              line-height: 1.4;
+              word-break: break-word;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 12px;
+            }
+
+            .opt-meta-val-text {
+              flex: 1;
+            }
+
+            .opt-meta-copy-btn {
+              background: rgba(56, 189, 248, 0.08);
+              border: 1px solid rgba(56, 189, 248, 0.2);
+              border-radius: 4px;
+              padding: 2px 8px;
+              font-size: 10px;
+              color: #38bdf8;
+              cursor: pointer;
+              font-family: inherit;
+              font-weight: 600;
+              transition: all 0.15s;
+              flex-shrink: 0;
+            }
+
+            .opt-meta-copy-btn:hover {
+              background: rgba(56, 189, 248, 0.18);
+              color: #ffffff;
+            }
+          </style>
+
+          <!-- Header -->
+          <div class="opt-header">
+            <div class="opt-icon-wrapper">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div class="opt-header-text">
+              <span class="opt-badge">AI Recommendation</span>
+              <h4>${escapeHTML(titleText)}</h4>
+            </div>
+          </div>
+
+          <!-- Summary (if any) -->
+          ${summaryText && summaryText.trim() !== '' ? `
+            <div class="opt-summary-section">
+              <strong>Summary:</strong> ${escapeHTML(summaryText)}
+            </div>
+          ` : ''}
+
+          <!-- Reasoning (if any) -->
+          ${reasoningText && reasoningText.trim() !== '' ? `
+            <div class="opt-section opt-reasoning-section">
+              <div class="opt-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                </svg>
+                <h5>AI Reasoning</h5>
+              </div>
+              <p class="opt-text">${escapeHTML(reasoningText)}</p>
+            </div>
+          ` : ''}
+
+          <!-- Why This Matters -->
+          ${whyItMattersText && whyItMattersText.trim() !== '' ? `
+            <div class="opt-section opt-why-section">
+              <div class="opt-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <h5>Why This Matters</h5>
+              </div>
+              <p class="opt-text">${escapeHTML(whyItMattersText)}</p>
+            </div>
+          ` : ''}
+
+          <!-- How to Implement -->
+          ${data.implementation && (!Array.isArray(data.implementation) || data.implementation.length > 0) ? `
+            <div class="opt-section">
+              <div class="opt-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                <h5>How to Implement</h5>
+              </div>
+              ${formatSteps(data.implementation)}
+            </div>
+          ` : ''}
+
+          <!-- Generated Content (if any) -->
+          ${data.generatedContent && (typeof data.generatedContent !== 'object' || Object.keys(data.generatedContent).length > 0) ? `
+            <div class="opt-section">
+              <div class="opt-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <h5>AI Recommendation</h5>
+              </div>
+              ${renderGeneratedContent(data.generatedContent)}
+            </div>
+          ` : ''}
+
+          <!-- Alternatives (if any) -->
+          ${data.alternatives && Array.isArray(data.alternatives) && data.alternatives.length > 0 ? `
+            <div class="opt-section">
+              <div class="opt-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+                <h5>Alternative Options</h5>
+              </div>
+              ${renderAlternatives(data.alternatives)}
+            </div>
+          ` : ''}
+
+          <!-- Code Change (if any) -->
+          ${data.code && data.code !== 'null' && String(data.code).trim() !== '' ? `
+            <div class="opt-section">
+              <div class="opt-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                </svg>
+                <h5>Implementation Example</h5>
+              </div>
+              <div class="opt-code-container">
+                <pre><code class="opt-code-block" id="opt-code-snippet">${escapeHTML(data.code)}</code></pre>
+                <button class="opt-copy-btn" id="opt-copy-btn-el">Copy Code</button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      // Set up click handler for Copy Code button if it exists
+      if (data.code && data.code !== 'null' && String(data.code).trim() !== '') {
+        setTimeout(() => {
+          const copyBtn = document.getElementById('opt-copy-btn-el');
+          if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+              navigator.clipboard.writeText(data.code);
+              copyBtn.innerText = 'Copied!';
+              copyBtn.style.color = '#34d399';
+              setTimeout(() => {
+                copyBtn.innerText = 'Copy Code';
+                copyBtn.style.color = '';
+              }, 2000);
+            });
+          }
+        }, 50);
+      }
+    } else {
+      // Fallback markdown rendering
+      const paragraphs = text
+        .split('\n\n')
+        .map(p => {
+          const trimmed = p.trim();
+          if (!trimmed) return '';
+          if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+            const listItems = trimmed
+              .split('\n')
+              .map(li => `<li>${escapeHTML(li.replace(/^[-*]\s*/, ''))}</li>`)
+              .join('');
+            return `<ul>${listItems}</ul>`;
+          }
+          if (trimmed.startsWith('#')) {
+            const level = (trimmed.match(/^#+/) || ['#'])[0].length;
+            const cleanText = trimmed.replace(/^#+\s*/, '');
+            return `<h${Math.min(level + 2, 6)}>${escapeHTML(cleanText)}</h${Math.min(level + 2, 6)}>`;
+          }
+          return `<p>${escapeHTML(trimmed).replace(/\n/g, '<br>')}</p>`;
+        })
+        .filter(Boolean)
+        .join('');
+
+      optimiserOutput.innerHTML = `<div class="ai-raw-text">${paragraphs}</div>`;
+    }
   }
 
   function escapeHTML(str: string): string {

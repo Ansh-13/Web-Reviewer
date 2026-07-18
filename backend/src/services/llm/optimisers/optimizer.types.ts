@@ -8,4 +8,6 @@ export interface OptimizerContext {
     };
 
     page: any;
+
+    data : any
 }
