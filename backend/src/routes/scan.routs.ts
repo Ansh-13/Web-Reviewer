@@ -95,6 +95,7 @@ scanRouter.post("/api/v1/scan", requireAuth, async (req, res) => {
         }
 
         res.json({
+            scan_id: scanDetail.id,
             url: parseUrl.href,
             scanDurationMs: end_time - start_time,
             score: seo_score.score,
@@ -134,7 +135,7 @@ scanRouter.get("/api/v1/getScan", requireAuth, async(req,res) => {
         console.log("profileError:", profileError)
     }
 
-    const {data : scanDetail, error : scanError} = await supabase.from("scans").select("id, url,status").eq("project_id",projectData?.id);
+    const {data : scanDetail, error : scanError} = await supabase.from("scans").select("id, url, status, started_at").eq("project_id",projectData?.id);
 
     if(scanError){
         console.log("scanError:", scanError)

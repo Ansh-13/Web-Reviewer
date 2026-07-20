@@ -2,226 +2,350 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Scan Results | Web-Reviewer">
-  <!-- ───────── NAVBAR ───────── -->
-  <nav class="navbar">
-    <div class="nav-inner">
-      <a href="/dashboard" class="nav-brand">
-        <span class="brand-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#bg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <defs><linearGradient id="bg" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs>
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M8 12l2 2 4-4"/>
-          </svg>
-        </span>
-        <span class="brand-text">Web-Reviewer</span>
-      </a>
+<Layout title="Detailed Scan Report | Web-Reviewer">
+  <!-- Include Tailwind CDN, Fonts, and Custom Config inside Layout -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries" is:inline></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest" is:inline></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 
-      <div class="nav-right">
-        <a href="/dashboard" class="nav-link" title="Dashboard">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span>Dashboard</span>
-        </a>
-        <div class="nav-user" id="nav-user-info">
-          <img id="nav-avatar" class="nav-avatar" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="Avatar" />
-          <span class="nav-name" id="nav-name">...</span>
+  <script id="tailwind-config" is:inline>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Hanken Grotesk', 'sans-serif'],
+          },
+          colors: {
+            surface: '#101415',
+            'surface-bright': '#363a3b',
+            'surface-container': '#191c1e',
+            accent: '#8b5cf6', // Purple accent
+          }
+        }
+      }
+    }
+  </script>
+
+  <style is:inline>
+    body {
+      background-color: #0b0e0f; /* Deep background for contrast */
+      color: #e2e8f0;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(139, 92, 246, 0.2);
+    }
+    .progress-ring__circle {
+      transition: stroke-dashoffset 0.35s;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    /* Comparison styles */
+    .compare-scan-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.01);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .compare-scan-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .compare-scan-row.selected {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+  </style>
+
+  <div class="font-sans antialiased min-h-screen flex flex-col w-full">
+    <!-- BEGIN: Navigation -->
+    <nav class="sticky top-0 z-50 border-b border-white/10 bg-[#101415]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2" data-purpose="logo">
+        <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+          <i class="text-white w-5 h-5" data-lucide="check-circle"></i>
+        </div>
+        <span class="font-bold text-xl tracking-tight">Web-Reviewer</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <div class="hidden md:flex items-center gap-4 text-sm font-medium text-slate-400">
+          <a class="hover:text-white transition-colors" href="/dashboard">Dashboard</a>
+          <a class="text-white" href="#">Reports</a>
+          <a class="hover:text-white transition-colors" href="#">Projects</a>
+        </div>
+        <div class="flex items-center gap-3 pl-6 border-l border-white/10">
+          <div class="text-right hidden sm:block">
+            <p class="text-xs font-semibold" id="nav-name">...</p>
+            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Premium Plan</p>
+          </div>
+          <img id="nav-avatar" alt="Avatar" class="w-8 h-8 rounded-full border border-accent/50" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA17btC-1bymAouJQxxXEzMgP7ZDw02s8p6XcrEFbHDVuNOaQRTaaNXNpsBfUmt3RUs6KVTxmt94123Xvl0EGa0Dh4tAGIql3HoyOs8rSBmBp_R0ir8TklMIAHWq2YjZFPtCOtr3w652tli5MoLSaBpU5bbgBiiw2O8exrc0h8fMtuntLowS5MIWnrPXMidf5oUNRUR5iGyO369cyLKKrNHW0fkUxnPqo0bRilDHvFvGgsoJ2Mm42z88w"/>
         </div>
       </div>
+    </nav>
+    <!-- END: Navigation -->
+
+    <!-- Loader Spinner -->
+    <div class="flex flex-col items-center justify-center py-20 flex-grow" id="page-loader">
+      <div class="w-10 h-10 border-4 border-white/5 border-t-primary rounded-full animate-spin"></div>
+      <p class="text-slate-400 text-sm mt-4">Loading detailed report…</p>
     </div>
-  </nav>
 
-  <!-- ───────── PAGE CONTENT ───────── -->
-  <main class="results-main">
-    <!-- Loading spinner -->
-    <div class="loading-state" id="page-loader">
-      <div class="spinner"></div>
-      <p>Fetching scan details…</p>
-    </div>
+    <main class="max-w-5xl mx-auto px-6 py-10 w-full hidden space-y-12" id="content-area">
+      <!-- BEGIN: Report Header -->
+      <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div data-purpose="title-section">
+          <h1 class="text-4xl font-extrabold text-white mb-3">Detailed Scan Report</h1>
+        </div>
 
-    <!-- Main Section (hidden until loaded) -->
-    <section class="content-wrapper hidden" id="content-area">
-      <!-- Info Header -->
-      <div class="section-header">
-        <h1>Detailed Scan Report</h1>
-        <p class="section-subtitle">Audit ID: <span class="audit-id" id="report-id"></span></p>
-      </div>
-
-      <!-- ── Results Display Card ── -->
-      <div class="glass-card results-card" id="results-card">
-        <div class="score-ring-container">
-          <div class="score-ring" id="score-ring">
-            <svg viewBox="0 0 120 120">
-              <circle class="ring-bg" cx="60" cy="60" r="52"/>
-              <circle class="ring-progress" id="ring-progress" cx="60" cy="60" r="52"/>
+        <div class="flex items-center gap-8 glass-card p-6" data-purpose="score-overview">
+          <div class="relative flex items-center justify-center">
+            <!-- Circular Progress -->
+            <svg class="w-24 h-24">
+              <circle class="text-white/5" cx="48" cy="48" fill="transparent" r="42" stroke="currentColor" stroke-width="8"></circle>
+              <circle class="text-accent progress-ring__circle" id="ring-progress" cx="48" cy="48" fill="transparent" r="42" stroke="currentColor" stroke-dasharray="263.89" stroke-dashoffset="263.89" stroke-linecap="round" stroke-width="8"></circle>
             </svg>
-            <div class="score-value">
-              <span class="score-number" id="score-number">—</span>
-              <span class="score-label">Score</span>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-2xl font-bold text-white" id="score-number">—</span>
+              <span class="text-[10px] text-slate-400 uppercase font-semibold">Score</span>
             </div>
           </div>
-          <div class="grade-container">
-            <span class="grade-badge" id="grade-badge">—</span>
-            <span class="grade-label">SEO Grade</span>
+          <div class="flex flex-col items-center justify-center px-6 border-l border-white/10">
+            <span class="text-5xl font-black" id="grade-badge">—</span>
+            <span class="text-[10px] text-slate-400 uppercase mt-1 font-semibold">SEO Grade</span>
           </div>
         </div>
+      </header>
+      <!-- END: Report Header -->
 
-        <!-- Counts grid -->
-        <div class="counts-grid">
-          <div class="count-card error">
-            <span class="count-num" id="count-errors">0</span>
-            <span class="count-lbl">Errors</span>
+      <!-- BEGIN: Summary Cards -->
+      <section class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <!-- Errors -->
+        <div class="glass-card p-6 border-l-4 border-red-500 flex justify-between items-center hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer" id="card-errors-summary">
+          <div>
+            <p class="text-sm text-slate-400 font-medium">Critical Errors</p>
+            <p class="text-3xl font-bold mt-1 text-white" id="count-errors">0</p>
           </div>
-          <div class="count-card warning">
-            <span class="count-num" id="count-warnings">0</span>
-            <span class="count-lbl">Warnings</span>
-          </div>
-          <div class="count-card pass">
-            <span class="count-num" id="count-passed">0</span>
-            <span class="count-lbl">Passed</span>
+          <div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+            <i data-lucide="alert-circle"></i>
           </div>
         </div>
-
-        <!-- Individual checks lists grouped by status -->
-        <div class="checks-group-wrapper">
-          <h3>Failed Audits (Errors)</h3>
-          <div class="results-checks errors-list" id="errors-checks"></div>
-
-          <h3>Warnings</h3>
-          <div class="results-checks warnings-list" id="warnings-checks"></div>
-
-          <h3>Passed Checks</h3>
-          <div class="results-checks passed-list" id="passed-checks"></div>
+        <!-- Warnings -->
+        <div class="glass-card p-6 border-l-4 border-amber-500 flex justify-between items-center hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer" id="card-warnings-summary">
+          <div>
+            <p class="text-sm text-slate-400 font-medium">Warnings</p>
+            <p class="text-3xl font-bold mt-1 text-amber-500" id="count-warnings">0</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+            <i data-lucide="alert-triangle"></i>
+          </div>
         </div>
+        <!-- Passed -->
+        <div class="glass-card p-6 border-l-4 border-emerald-500 flex justify-between items-center hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer" id="card-passed-summary">
+          <div>
+            <p class="text-sm text-slate-400 font-medium">Passed Checks</p>
+            <p class="text-3xl font-bold mt-1 text-emerald-500" id="count-passed">0</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+            <i data-lucide="check-circle-2"></i>
+          </div>
+        </div>
+      </section>
+      <!-- END: Summary Cards -->
+
+      <!-- BEGIN: Findings Section -->
+      <div class="space-y-8">
+        <!-- FAILED CATEGORY -->
+        <section data-purpose="failed-audits">
+          <h2 class="text-lg font-semibold mb-4 flex items-center justify-between text-red-400 cursor-pointer select-none group border-b border-white/5 pb-2" id="toggle-errors">
+            <span class="flex items-center gap-2">
+              <i class="w-5 h-5" data-lucide="x-circle"></i>
+              Failed Audits (Errors)
+            </span>
+            <i class="w-5 h-5 text-slate-500 group-hover:text-red-400 transition-transform duration-300" data-lucide="chevron-down" id="chevron-errors"></i>
+          </h2>
+          <div class="space-y-4 transition-all duration-300" id="errors-checks"></div>
+        </section>
+
+        <!-- WARNINGS CATEGORY -->
+        <section data-purpose="warnings-audits">
+          <h2 class="text-lg font-semibold mb-4 flex items-center justify-between text-amber-400 cursor-pointer select-none group border-b border-white/5 pb-2" id="toggle-warnings">
+            <span class="flex items-center gap-2">
+              <i class="w-5 h-5" data-lucide="alert-triangle"></i>
+              Warnings Found
+            </span>
+            <i class="w-5 h-5 text-slate-500 group-hover:text-amber-400 transition-transform duration-300" data-lucide="chevron-down" id="chevron-warnings"></i>
+          </h2>
+          <div class="space-y-4 transition-all duration-300" id="warnings-checks"></div>
+        </section>
+
+        <!-- PASSED CATEGORY -->
+        <section data-purpose="passed-audits">
+          <h2 class="text-lg font-semibold mb-4 flex items-center justify-between text-emerald-400 cursor-pointer select-none group border-b border-white/5 pb-2" id="toggle-passed">
+            <span class="flex items-center gap-2">
+              <i class="w-5 h-5" data-lucide="check-circle-2"></i>
+              Passed Checks
+            </span>
+            <i class="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-transform duration-300" data-lucide="chevron-down" id="chevron-passed"></i>
+          </h2>
+          <div class="glass-card divide-y divide-white/5 transition-all duration-300" id="passed-checks"></div>
+        </section>
       </div>
-
-      <!-- ── Report Comparison Card ── -->
-      <div class="glass-card compare-card" id="compare-card">
-        <div class="compare-card-top">
-          <div class="compare-title-group">
-            <svg class="compare-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="17 1 21 5 17 9"/>
-              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <polyline points="7 23 3 19 7 15"/>
-              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-            <h2>Compare Reports</h2>
-          </div>
-          <span class="compare-badge">Diff Analysis</span>
-        </div>
-        <p class="compare-desc">Select the <strong>Current</strong> scan and a <strong>Previous</strong> scan to compare against — see what improved, regressed, or was fixed.</p>
-
-        <!-- Two-column scan selector -->
-        <div class="compare-cols-wrapper" id="compare-cols-wrapper">
-          <!-- Skeleton -->
-          <div class="compare-skeleton compare-skeleton-full" id="compare-skeleton">
-            <div class="cskel-row"></div>
-            <div class="cskel-row"></div>
-            <div class="cskel-row"></div>
-          </div>
-
-          <!-- Empty state -->
-          <div class="compare-empty hidden" id="compare-empty">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <p>Need at least 2 completed scans in this project to compare.</p>
-          </div>
-
-          <!-- Two scan columns -->
-          <div class="compare-two-cols hidden" id="compare-two-cols">
-            <!-- Column A -->
-            <div class="compare-col">
-              <div class="compare-col-header scan-a-header">
-                <span class="compare-col-label">C</span>
-                <span>Current Scan</span>
-                <span class="compare-col-hint" id="scan-a-hint">None selected</span>
-              </div>
-              <div class="compare-col-list" id="scan-a-list"></div>
-            </div>
-
-            <!-- Divider -->
-            <div class="compare-vs-divider">
-              <span>VS</span>
-            </div>
-
-            <!-- Column B -->
-            <div class="compare-col">
-              <div class="compare-col-header scan-b-header">
-                <span class="compare-col-label scan-b-label">P</span>
-                <span>Previous Scan</span>
-                <span class="compare-col-hint" id="scan-b-hint">None selected</span>
-              </div>
-              <div class="compare-col-list" id="scan-b-list"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Compare button -->
-        <button class="compare-btn hidden" id="compare-btn" disabled>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          <span id="compare-btn-text">Compare Selected Scans</span>
-          <div class="compare-btn-spinner hidden" id="compare-btn-spinner"></div>
-        </button>
-
-        <!-- Comparison Result Output -->
-        <div class="compare-result hidden" id="compare-result"></div>
-      </div>
+      <!-- END: Findings Section -->
 
       <!-- ── AI Insights Card ── -->
-      <div class="glass-card ai-card" id="ai-card">
-        <div class="ai-header">
-          <div class="ai-title-group">
-            <svg class="ai-sparkle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-            </svg>
-            <h2>AI Technical Consultant</h2>
+      <div class="glass-card p-8 bg-surface-container/20" id="ai-card">
+        <div class="flex justify-between items-start mb-6">
+          <div class="flex items-center gap-2">
+            <i class="text-accent w-5 h-5 animate-pulse" data-lucide="sparkles"></i>
+            <h2 class="text-xl font-bold text-white">AI Technical Consultant</h2>
           </div>
-          <span class="ai-badge">Gemini AI</span>
         </div>
         
-        <p class="ai-desc">Get customized explanations and actionable recommendations for your SEO report from our AI consultant.</p>
+        <p class="text-slate-400 text-sm mb-6">Get customized explanations and actionable recommendations for your SEO report from our AI consultant.</p>
         
-        <!-- Action Button -->
-        <button class="ai-btn" id="ai-generate-btn">
+        <button class="w-full bg-accent hover:bg-accent/90 text-white font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2" id="ai-generate-btn">
           <span id="ai-btn-text">Generate AI Recommendations</span>
-          <div class="ai-btn-spinner hidden" id="ai-btn-spinner"></div>
+          <span class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin hidden" id="ai-btn-spinner"></span>
         </button>
 
         <!-- AI Output Area -->
-        <div class="ai-content hidden" id="ai-content-area">
-          <div class="ai-markdown" id="ai-insights-output"></div>
+        <div class="hidden mt-6" id="ai-content-area">
+          <div class="flex justify-between items-center border-t border-white/10 pt-6 mb-4">
+            <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Analysis Output</span>
+            <button id="regenerate-ai-btn" class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/5 transition-all">
+              <i class="w-3.5 h-3.5" data-lucide="refresh-cw"></i>
+              <span>Regenerate Output</span>
+            </button>
+          </div>
+          <div class="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed" id="ai-insights-output"></div>
+          <div class="flex justify-end mt-6 pt-6 border-t border-white/5">
+            <button id="close-ai-btn" class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-all">
+              <i class="w-3.5 h-3.5" data-lucide="x"></i>
+              <span>Close Output</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- ── AI Optimiser Card ── -->
-      <div class="glass-card ai-card" id="optimiser-card" style="margin-top: 24px;">
-        <div class="ai-header">
-          <div class="ai-title-group">
-            <svg class="ai-sparkle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            <h2>AI Rule Optimiser</h2>
+      <div class="glass-card p-8 bg-surface-container/20 animate-fade-in" id="optimiser-card">
+        <div class="flex justify-between items-start mb-6">
+          <div class="flex items-center gap-2">
+            <i class="text-accent w-5 h-5" data-lucide="zap"></i>
+            <h2 class="text-xl font-bold text-white">AI Rule Optimiser</h2>
           </div>
-          <span class="ai-badge">Gemini AI</span>
         </div>
         
-        <p class="ai-desc">Select an issue or warning to generate an optimised fix.</p>
+        <p class="text-slate-400 text-sm mb-6">Select an issue or warning to generate an optimised fix.</p>
         
-        <div class="optimiser-controls">
-          <select id="optimiser-rule-select" class="optimiser-select">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <select id="optimiser-rule-select" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-accent text-white">
             <option value="">Select an issue to optimise...</option>
           </select>
-          <button class="ai-btn" id="optimiser-btn" disabled>
+          <button class="bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" id="optimiser-btn" disabled>
             <span id="optimiser-btn-text">Optimise</span>
-            <div class="ai-btn-spinner hidden" id="optimiser-btn-spinner"></div>
+            <span class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin hidden" id="optimiser-btn-spinner"></span>
           </button>
         </div>
 
         <!-- Optimiser Output Area -->
-        <div class="ai-content hidden" id="optimiser-content-area">
-          <div class="ai-markdown" id="optimiser-output"></div>
+        <div class="hidden mt-6" id="optimiser-content-area">
+          <div class="flex justify-between items-center border-t border-white/10 pt-6 mb-4">
+            <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Optimisation Output</span>
+            <button id="close-optimiser-btn" class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/5 transition-all">
+              <i class="w-3.5 h-3.5" data-lucide="x"></i>
+              <span>Close Output</span>
+            </button>
+          </div>
+          <div id="optimiser-output"></div>
+          <div class="flex justify-end mt-6 pt-6 border-t border-white/5">
+            <button id="close-optimiser-btn-bottom" class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-all">
+              <i class="w-3.5 h-3.5" data-lucide="x"></i>
+              <span>Close Output</span>
+            </button>
+          </div>
         </div>
       </div>
-    </section>
-  </main>
+
+      <!-- ── Report Comparison Card ── -->
+      <div class="glass-card p-8 bg-surface-container/20" id="compare-card">
+        <div class="flex justify-between items-start mb-6">
+          <div class="flex items-center gap-2">
+            <i class="text-accent w-5 h-5" data-lucide="git-compare"></i>
+            <h2 class="text-xl font-bold text-white">Compare Reports</h2>
+          </div>
+          <span class="text-[10px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded uppercase tracking-wider">Diff Analysis</span>
+        </div>
+        <p class="text-slate-400 text-sm mb-6">Select a previous scan to compare against this current scan — see what improved, regressed, or was fixed.</p>
+
+        <!-- Scan selector -->
+        <div class="space-y-4" id="compare-cols-wrapper">
+          <!-- Skeleton -->
+          <div class="space-y-3" id="compare-skeleton">
+            <div class="h-10 bg-white/5 rounded animate-pulse"></div>
+            <div class="h-10 bg-white/5 rounded animate-pulse"></div>
+          </div>
+
+          <!-- Empty state -->
+          <div class="text-center text-slate-500 py-6 italic hidden" id="compare-empty">
+            <i class="w-8 h-8 mx-auto text-slate-600 mb-2" data-lucide="help-circle"></i>
+            <p>No other completed scans in this project to compare against.</p>
+          </div>
+
+          <!-- Previous Scans list -->
+          <div class="hidden" id="compare-single-col">
+            <div class="text-xs uppercase font-bold text-slate-400 flex justify-between items-center mb-2">
+              <span class="flex items-center gap-1.5">Select Previous Scan</span>
+              <span class="text-[10px] text-slate-500 font-mono" id="scan-b-hint">None selected</span>
+            </div>
+            <div class="max-h-60 overflow-y-auto space-y-2 pr-1" id="scan-b-list"></div>
+          </div>
+        </div>
+
+        <!-- Compare button -->
+        <button class="w-full bg-accent hover:bg-accent/90 text-white font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 mt-6 hidden" id="compare-btn" disabled>
+          <i class="w-4 h-4" data-lucide="git-compare"></i>
+          <span id="compare-btn-text">Compare Scans</span>
+          <span class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin hidden" id="compare-btn-spinner"></span>
+        </button>
+
+        <!-- Comparison Result Output Area -->
+        <div class="hidden mt-8 border-t border-white/10 pt-8" id="compare-result-area">
+          <div class="flex justify-between items-center mb-6">
+            <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Comparison Output</span>
+            <button id="close-compare-btn" class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/5 transition-all">
+              <i class="w-3.5 h-3.5" data-lucide="x"></i>
+              <span>Close Output</span>
+            </button>
+          </div>
+          <div id="compare-result"></div>
+          <div class="flex justify-end mt-8 pt-6 border-t border-white/5">
+            <button id="close-compare-btn-bottom" class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-all">
+              <i class="w-3.5 h-3.5" data-lucide="x"></i>
+              <span>Close Output</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="mt-20 pt-10 border-t border-white/5 text-center text-slate-500 text-xs">
+        <p>© 2024 Web-Reviewer SEO Analytics. All rights reserved.</p>
+      </footer>
+    </main>
+  </div>
 </Layout>
 
 <!-- ───────── CLIENT-SIDE SCRIPT ───────── -->
@@ -233,7 +357,6 @@ import Layout from '../layouts/Layout.astro';
   const contentArea      = document.getElementById('content-area') as HTMLElement;
   const navAvatar        = document.getElementById('nav-avatar') as HTMLImageElement;
   const navName          = document.getElementById('nav-name') as HTMLSpanElement;
-  const reportId         = document.getElementById('report-id') as HTMLSpanElement;
 
   const scoreNumber      = document.getElementById('score-number') as HTMLSpanElement;
   const gradeBadge       = document.getElementById('grade-badge') as HTMLSpanElement;
@@ -252,6 +375,7 @@ import Layout from '../layouts/Layout.astro';
   const aiBtnSpinner     = document.getElementById('ai-btn-spinner') as HTMLSpanElement;
   const aiContentArea    = document.getElementById('ai-content-area') as HTMLDivElement;
   const aiInsightsOutput = document.getElementById('ai-insights-output') as HTMLDivElement;
+  const closeAiBtn       = document.getElementById('close-ai-btn') as HTMLButtonElement;
 
   const optimiserRuleSelect = document.getElementById('optimiser-rule-select') as HTMLSelectElement;
   const optimiserBtn        = document.getElementById('optimiser-btn') as HTMLButtonElement;
@@ -259,10 +383,19 @@ import Layout from '../layouts/Layout.astro';
   const optimiserBtnSpinner = document.getElementById('optimiser-btn-spinner') as HTMLSpanElement;
   const optimiserContentArea= document.getElementById('optimiser-content-area') as HTMLDivElement;
   const optimiserOutput     = document.getElementById('optimiser-output') as HTMLDivElement;
+  const closeOptimiserBtn   = document.getElementById('close-optimiser-btn') as HTMLButtonElement;
+  const closeOptimiserBtnBottom = document.getElementById('close-optimiser-btn-bottom') as HTMLButtonElement;
 
   let currentToken: string | null = null;
   let selectedScanA: string | null = null;  // currscan (Current)
   let selectedScanB: string | null = null;  // prevscan (Previous)
+  let scannedUrl: string = '';
+  let aiLoaded = false;
+  let aiLoading = false;
+  let aiOpen = false;
+  let optimiserLoaded = false;
+  let optimiserOpen = false;
+  let currentOptimisedRule: string | null = null;
 
   /* ── Read scan_id from query params ── */
   const params = new URLSearchParams(window.location.search);
@@ -287,7 +420,7 @@ import Layout from '../layouts/Layout.astro';
     fetchProjectScans();
   });
 
-  /* ── Grade colour helper ── */
+  /* ── Grade color helper ── */
   function gradeColor(grade: string): string {
     const g = grade.toUpperCase();
     if (g === 'A+' || g === 'A') return '#34d399';
@@ -295,6 +428,24 @@ import Layout from '../layouts/Layout.astro';
     if (g === 'C') return '#fbbf24';
     if (g === 'D') return '#fb923c';
     return '#f87171';
+  }
+
+  /* ── Get icon name based on check title ── */
+  function getCheckIconName(title: string): string {
+    const t = title.toLowerCase();
+    if (t.includes('canonical')) return 'link';
+    if (t.includes('title')) return 'type';
+    if (t.includes('h1') || t.includes('heading')) return 'heading';
+    if (t.includes('description') || t.includes('meta')) return 'file-text';
+    if (t.includes('internal link') || t.includes('links')) return 'external-link';
+    if (t.includes('structured') || t.includes('json-ld')) return 'database';
+    if (t.includes('thin') || t.includes('word') || t.includes('words')) return 'feather';
+    if (t.includes('og:') || t.includes('twitter') || t.includes('social')) return 'share-2';
+    if (t.includes('image') || t.includes('alt')) return 'maximize';
+    if (t.includes('robot') || t.includes('robots')) return 'bot';
+    if (t.includes('viewport') || t.includes('mobile')) return 'smartphone';
+    if (t.includes('lang') || t.includes('hreflang')) return 'languages';
+    return 'check-circle';
   }
 
   /* ── Fetch details ── */
@@ -312,8 +463,6 @@ import Layout from '../layouts/Layout.astro';
       if (!res.ok) throw new Error('Failed to load scan results');
 
       const body = await res.json();
-      
-      // Since scan_results matches scan_id, body.data is an array e.g., [{ seo: { score, grade, summary, results } }]
       const scanInfo = body.data?.[0]?.seo;
 
       if (!scanInfo) {
@@ -323,7 +472,6 @@ import Layout from '../layouts/Layout.astro';
       pageLoader.classList.add('hidden');
       contentArea.classList.remove('hidden');
 
-      reportId.textContent = scanId;
       renderScanReport(scanInfo);
 
     } catch (err: any) {
@@ -335,19 +483,30 @@ import Layout from '../layouts/Layout.astro';
 
   /* ── Render scan report ── */
   function renderScanReport(seo: any) {
+    scannedUrl = seo.url || '';
     scoreNumber.textContent = seo.score ?? '—';
     gradeBadge.textContent = seo.grade ?? '—';
-    gradeBadge.style.background = gradeColor(seo.grade || 'F') + '22';
-    gradeBadge.style.color = gradeColor(seo.grade || 'F');
-    gradeBadge.style.borderColor = gradeColor(seo.grade || 'F') + '44';
+    
+    const color = gradeColor(seo.grade || 'F');
+    if (seo.grade === 'C') {
+      gradeBadge.className = 'text-5xl font-black text-amber-400';
+    } else if (seo.grade === 'A+' || seo.grade === 'A') {
+      gradeBadge.className = 'text-5xl font-black text-emerald-400';
+    } else if (seo.grade === 'B') {
+      gradeBadge.className = 'text-5xl font-black text-blue-400';
+    } else if (seo.grade === 'D') {
+      gradeBadge.className = 'text-5xl font-black text-orange-400';
+    } else {
+      gradeBadge.className = 'text-5xl font-black text-red-400';
+    }
 
     // Animate score ring
-    const circumference = 2 * Math.PI * 52;
+    const circumference = 2 * Math.PI * 42; // Radius is 42
     const score = Math.min(Math.max(seo.score || 0, 0), 100);
     const offset = circumference - (score / 100) * circumference;
     ringProgress.style.strokeDasharray = `${circumference}`;
     ringProgress.style.strokeDashoffset = `${circumference}`;
-    ringProgress.style.stroke = gradeColor(seo.grade || 'F');
+    ringProgress.style.stroke = color;
     requestAnimationFrame(() => {
       ringProgress.style.transition = 'stroke-dashoffset 1s ease';
       ringProgress.style.strokeDashoffset = `${offset}`;
@@ -368,42 +527,132 @@ import Layout from '../layouts/Layout.astro';
     // Helper to generate lists html
     const mapChecks = (checks: any[], type: 'error' | 'warning' | 'pass') => {
       if (checks.length === 0) {
-        return `<div class="empty-group">No audits in this category</div>`;
+        if (type === 'error') {
+          return `<div class="glass-card p-8 text-center text-slate-500 italic">No critical audits failed in this category.</div>`;
+        }
+        if (type === 'warning') {
+          return `<div class="glass-card p-8 text-center text-slate-500 italic">No warnings found in this category.</div>`;
+        }
+        return `<div class="p-6 text-center text-slate-500 italic">No passed checks.</div>`;
       }
-      return checks.map(r => `
-        <div class="check-item ${type}">
-          <span class="check-icon">${type === 'pass' ? '✓' : type === 'error' ? '✕' : '⚠'}</span>
-          <div class="check-body">
-            <span class="check-name">${r.title || r.name || r.check || 'Audit Check'}</span>
-            ${r.message ? `<span class="check-msg">${r.message}</span>` : ''}
-          </div>
-        </div>
-      `).join('');
+
+      if (type === 'pass') {
+        return checks.map(r => {
+          const title = r.title || r.name || r.check || 'Audit Check';
+          const icon = getCheckIconName(title);
+          return `
+            <div class="p-4 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i class="w-4 h-4 text-emerald-500" data-lucide="${icon}"></i>
+                <span class="text-sm text-slate-300 font-medium">${escapeHTML(title)}</span>
+              </div>
+              <span class="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold uppercase">PASSED</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      return checks.map(r => {
+        const title = r.title || r.name || r.check || 'Audit Check';
+        const msg = r.message || '';
+        const icon = getCheckIconName(title);
+        
+        let cardBorder = 'border-white/10';
+        let titleColor = 'text-white';
+        let iconColor = 'text-amber-500';
+        let bgStyle = '';
+
+        if (type === 'error') {
+          cardBorder = 'border-red-500/20';
+          titleColor = 'text-red-100';
+          iconColor = 'text-red-500';
+        } else {
+          // Check if it is a critical highlight warning
+          if (title.toLowerCase().includes('multiple h1') || title.toLowerCase().includes('duplicate')) {
+            cardBorder = 'border-accent/30';
+            bgStyle = 'bg-accent/5';
+            iconColor = 'text-accent';
+          } else {
+            cardBorder = 'border-white/10';
+            iconColor = 'text-amber-500';
+          }
+        }
+
+        // Generate custom recommendation boxes for prominent failures
+        let recommendationBox = '';
+        if (type === 'error' || title.toLowerCase().includes('h1') || title.toLowerCase().includes('title') || title.toLowerCase().includes('canonical') || title.toLowerCase().includes('description')) {
+          let recText = 'Ensure only the main page title uses the H1 tag to provide a clear hierarchy for search engine crawlers.';
+          if (title.toLowerCase().includes('canonical')) {
+            recText = 'Add a rel="canonical" link header/element pointing to the preferred version of the URL to prevent indexing duplicate pages.';
+          } else if (title.toLowerCase().includes('title')) {
+            recText = 'Expand your page title to satisfy the 30-60 characters range, summarizing key page topics clearly.';
+          } else if (title.toLowerCase().includes('description')) {
+            recText = 'Write a meta description between 120 and 160 characters long that summarizes page content and contains target keywords.';
+          } else if (type === 'error') {
+            recText = 'Address this critical failure immediately to avoid ranking downgrades or search crawler blocks.';
+          }
+
+          recommendationBox = `
+            <div class="mt-4 p-4 rounded-lg bg-black/40 border border-white/5" data-purpose="recommendation">
+              <p class="text-xs uppercase tracking-widest ${type === 'error' ? 'text-red-400' : 'text-accent'} font-bold mb-2">Recommendation</p>
+              <p class="text-sm text-slate-300">${recText}</p>
+            </div>
+          `;
+        }
+
+        return `
+          <article class="glass-card ${cardBorder} overflow-hidden ${bgStyle}">
+            <div class="p-6">
+              <div class="flex items-start gap-4">
+                <i class="w-5 h-5 ${iconColor} mt-1 flex-shrink-0" data-lucide="${icon}"></i>
+                <div class="flex-1">
+                  <h3 class="font-bold text-lg mb-1 ${titleColor}">${escapeHTML(title)}</h3>
+                  <p class="text-slate-400 text-sm leading-relaxed">${escapeHTML(msg)}</p>
+                  ${recommendationBox}
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
     };
 
     errorsChecks.innerHTML = mapChecks(errorsList, 'error');
     warningsChecks.innerHTML = mapChecks(warningsList, 'warning');
     passedChecks.innerHTML = mapChecks(passedList, 'pass');
 
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
     // Populate Optimiser Dropdown
     let optimiserOptions = '<option value="">Select an issue to optimise...</option>';
     const allIssues = [...errorsList, ...warningsList];
     allIssues.forEach(item => {
       const title = item.title || item.name || item.check || 'Audit Check';
-      const id = item.id || '';
+      const id = item.id || title;
       optimiserOptions += `<option value="${id}">${title}</option>`;
     });
     optimiserRuleSelect.innerHTML = optimiserOptions;
   }
 
-  // ── AI generation click handler ──
-  aiGenerateBtn.addEventListener('click', async () => {
-    if (!currentToken || !scanId) return;
+  // ── AI generation handler ──
+  async function generateAiRecommendations() {
+    if (!currentToken || !scanId || aiLoading) return;
 
+    aiLoading = true;
     aiGenerateBtn.disabled = true;
     aiBtnText.textContent = "Analyzing SEO Report...";
     aiBtnSpinner.classList.remove('hidden');
-    aiContentArea.classList.add('hidden');
+    
+    // Show loading skeleton inside output area
+    aiInsightsOutput.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-10">
+        <div class="w-8 h-8 border-4 border-white/5 border-t-accent rounded-full animate-spin"></div>
+        <p class="text-xs text-slate-400 mt-3 font-semibold">AI is analyzing SEO vectors...</p>
+      </div>
+    `;
+    aiContentArea.classList.remove('hidden');
 
     try {
       const res = await fetch(`http://localhost:3000/api/v1/ai/?scanid=${scanId}`, {
@@ -425,7 +674,6 @@ import Layout from '../layouts/Layout.astro';
         throw new Error("No recommendations generated by AI.");
       }
 
-      // Try to parse JSON from response
       let cleanedText = aiText.trim();
       if (cleanedText.startsWith("```")) {
         cleanedText = cleanedText.replace(/^```(json)?/, "").replace(/```$/, "").trim();
@@ -435,29 +683,337 @@ import Layout from '../layouts/Layout.astro';
         const parsedJson = JSON.parse(cleanedText);
         renderAiJsonInsights(parsedJson);
       } catch (jsonErr) {
-        // Fallback: render as formatted plain text
         renderAiTextInsights(aiText);
       }
 
-      aiContentArea.classList.remove('hidden');
+      aiLoaded = true;
+      aiOpen = true;
+      aiBtnText.textContent = "Close Recommendations";
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Failed to generate AI insights.");
+      aiInsightsOutput.innerHTML = `
+        <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
+          Error: ${err.message || "Failed to generate AI insights."}
+        </div>
+      `;
+      aiBtnText.textContent = "Retry AI Recommendations";
     } finally {
+      aiLoading = false;
       aiGenerateBtn.disabled = false;
-      aiBtnText.textContent = "Regenerate AI Recommendations";
       aiBtnSpinner.classList.add('hidden');
+    }
+  }
+
+  aiGenerateBtn.addEventListener('click', () => {
+    if (!aiLoaded) {
+      generateAiRecommendations();
+    } else {
+      if (aiOpen) {
+        aiContentArea.classList.add('hidden');
+        aiBtnText.textContent = "Show Recommendations";
+        aiOpen = false;
+      } else {
+        aiContentArea.classList.remove('hidden');
+        aiBtnText.textContent = "Close Recommendations";
+        aiOpen = true;
+      }
     }
   });
 
+  if (closeAiBtn) {
+    closeAiBtn.addEventListener('click', () => {
+      aiContentArea.classList.add('hidden');
+      aiBtnText.textContent = "Show Recommendations";
+      aiOpen = false;
+    });
+  }
+
+  function getPriorityIconName(text: string): string {
+    const t = text.toLowerCase();
+    if (t.includes('canonical')) return 'link';
+    if (t.includes('title')) return 'short_text';
+    if (t.includes('h1') || t.includes('heading')) return 'layers';
+    if (t.includes('description')) return 'description';
+    if (t.includes('links') || t.includes('internal')) return 'link';
+    return 'warning';
+  }
+
+  function renderAiJsonInsights(data: any) {
+    const summary = data.summary || {};
+    const execSummary = summary.executiveSummary || summary.overallAssessment || 'No summary generated.';
+    const priorities = data.topPriorities || [];
+    const recs = data.recommendations || [];
+
+    // Calculate dynamic values
+    const scoreVal = scoreNumber.textContent || '0';
+    const gradeVal = gradeBadge.textContent || 'F';
+    const totalIssues = parseInt(countErrors.textContent || '0') + parseInt(countWarnings.textContent || '0');
+    const techDebt = totalIssues > 8 ? 'High' : totalIssues > 3 ? 'Medium' : 'Low';
+    
+    // Core summary card html
+    let summaryHtml = `
+      <!-- Summary Card -->
+      <section class="glass-card rounded-xl p-8 relative overflow-hidden group mb-8">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] -mr-32 -mt-32"></div>
+        <div class="relative z-10 flex flex-col md:flex-row gap-8">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="px-3 py-1 bg-accent/20 rounded-full border border-accent/30 text-accent font-label-sm text-xs uppercase tracking-wider">Executive Summary</div>
+              <span class="text-slate-500">•</span>
+              <span class="text-xs text-slate-400 italic truncate max-w-[240px]" title="${scannedUrl}">${scannedUrl ? 'Ref: ' + scannedUrl : 'Scanned URL'}</span>
+            </div>
+            <p class="text-2xl font-bold text-white leading-snug mb-4">
+              Your page exhibits an SEO score of <span class="text-accent font-extrabold">${scoreVal}/100</span> (Grade ${gradeVal}).
+            </p>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              ${escapeHTML(execSummary)}
+            </p>
+          </div>
+          <div class="md:w-px bg-white/10"></div>
+          <div class="md:w-1/3 flex flex-col justify-center gap-4">
+            <div class="flex items-center justify-between px-4 py-3 bg-white/5 rounded-lg border border-white/10">
+              <span class="text-xs font-semibold text-slate-400">Core Issues</span>
+              <span class="text-xl font-bold text-accent">${totalIssues < 10 ? '0' + totalIssues : totalIssues}</span>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3 bg-white/5 rounded-lg border border-white/10">
+              <span class="text-xs font-semibold text-slate-400">Technical Debt</span>
+              <span class="text-xl font-bold text-purple-400">${techDebt}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    // Priorities grid HTML
+    let prioritiesHtml = '';
+    if (priorities.length > 0) {
+      const colors = [
+        { bg: 'bg-red-500/10 text-red-400 border-red-500/20', icon: 'warning' },
+        { bg: 'bg-accent/10 text-accent border-accent/20', icon: 'short_text' },
+        { bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20', icon: 'layers' },
+        { bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: 'database' }
+      ];
+
+      const cards = priorities.slice(0, 4).map((p: string, i: number) => {
+        const color = colors[i % colors.length];
+        const iconName = getPriorityIconName(p);
+        
+        return `
+          <div class="glass-card p-4 rounded-xl flex items-start gap-3 hover:bg-white/10 transition-all cursor-default">
+            <div class="p-2 ${color.bg} rounded-lg flex-shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[18px]">${color.icon}</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-white truncate" title="${escapeHTML(p)}">${escapeHTML(p)}</p>
+              <p class="text-[10px] text-slate-500 font-semibold uppercase mt-0.5">Priority Item</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      prioritiesHtml = `
+        <!-- Top Priorities Bento Grid -->
+        <section class="mb-8">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="material-symbols-outlined text-red-400 text-[20px]" style="font-variation-settings: 'FILL' 1;">priority_high</span>
+            <h2 class="text-lg font-bold text-white">Top Priorities</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${cards}
+          </div>
+        </section>
+      `;
+    }
+
+    // Recommendations & Action Plan HTML
+    let detailedPlanHtml = '';
+    if (recs.length > 0) {
+      const detailedRecs = recs.slice(0, 2);
+      const remainingRecs = recs.slice(2);
+
+      const detailedCards = detailedRecs.map((r: any, i: number) => {
+        const title = r.title || 'Recommendation';
+        const why = r.whyItMatters || 'No explanation provided.';
+        const action = r.actionPlan || 'No action plan provided.';
+        const codeExample = r.example || '';
+        const impactBadge = i === 0 ? 'High Impact' : 'Technical Debt';
+        const badgeColor = i === 0 ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+
+        let revisedLayout = '';
+        if (title.toLowerCase().includes('heading') || title.toLowerCase().includes('h1')) {
+          revisedLayout = `
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <div class="bg-red-500/5 border border-red-500/20 rounded-lg p-3 text-xs opacity-60">
+                <span class="text-red-400 font-bold uppercase block mb-1">Current</span>
+                &lt;h1&gt;Software Engineer&lt;/h1&gt;<br/>
+                &lt;h1&gt;Projects&lt;/h1&gt;
+              </div>
+              <div class="bg-accent/5 border border-accent/20 rounded-lg p-3 text-xs">
+                <span class="text-accent font-bold uppercase block mb-1">Revised</span>
+                &lt;h1&gt;Software Engineer&lt;/h1&gt;<br/>
+                &lt;h2&gt;Projects&lt;/h2&gt;
+              </div>
+            </div>
+          `;
+        }
+
+        return `
+          <!-- Recommendation ${i + 1} -->
+          <div class="glass-card rounded-xl overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-${i === 0 ? 'red-400' : 'purple-400'}">${i === 0 ? 'error_outline' : 'info'}</span>
+                <h3 class="text-base font-bold text-white">${escapeHTML(title)}</h3>
+              </div>
+              <span class="px-3 py-1 rounded-full text-[10px] font-bold border ${badgeColor}">${impactBadge}</span>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h4 class="text-xs uppercase font-bold tracking-wider text-accent mb-2 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm">help_outline</span> Why it Matters
+                </h4>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                  ${escapeHTML(why)}
+                </p>
+              </div>
+              <div>
+                <h4 class="text-xs uppercase font-bold tracking-wider text-accent mb-2 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm">task_alt</span> Action Plan
+                </h4>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                  ${escapeHTML(action)}
+                </p>
+                ${codeExample ? `
+                  <div class="bg-black/40 rounded-lg p-4 font-mono text-xs text-slate-300 border border-white/5 mt-4">
+                    <span class="text-slate-500">&lt;!-- Recommended Fix --&gt;</span><br/>
+                    ${escapeHTML(codeExample)}
+                  </div>
+                ` : ''}
+                ${revisedLayout}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      let remainingHtml = '';
+      if (remainingRecs.length > 0) {
+        const remainingCards = remainingRecs.map((r: any) => {
+          const title = r.title || 'Recommendation';
+          const action = r.actionPlan || '';
+          
+          let iconName = 'description';
+          if (title.toLowerCase().includes('link')) iconName = 'link';
+          if (title.toLowerCase().includes('share') || title.toLowerCase().includes('social')) iconName = 'share';
+          
+          return `
+            <div class="glass-card p-6 rounded-xl space-y-3 hover:bg-white/5 transition-all">
+              <div class="flex items-center gap-2 text-accent">
+                <span class="material-symbols-outlined text-[20px]">${iconName}</span>
+                <h4 class="text-sm font-bold truncate text-white" title="${escapeHTML(title)}">${escapeHTML(title)}</h4>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">
+                ${escapeHTML(action)}
+              </p>
+              <div class="pt-2">
+                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-purple-400 h-full w-[45%]"></div>
+                </div>
+                <p class="text-[9px] text-slate-500 mt-1 uppercase font-bold tracking-tighter">Status Checked</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        remainingHtml = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            ${remainingCards}
+          </div>
+        `;
+      }
+
+      detailedPlanHtml = `
+        <!-- Detailed Recommendation Cards -->
+        <section class="space-y-6">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="material-symbols-outlined text-accent">list_alt</span>
+            <h2 class="text-lg font-bold text-white">Detailed Action Plan</h2>
+          </div>
+          
+          ${detailedCards}
+          
+          ${remainingHtml}
+        </section>
+      `;
+    }
+
+    aiInsightsOutput.innerHTML = `
+      <div class="space-y-8 animate-fade-in font-sans">
+        ${summaryHtml}
+        ${prioritiesHtml}
+        ${detailedPlanHtml}
+      </div>
+    `;
+
+    // Re-initialize any dynamic Lucide icons inside recommendations
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  function renderAiTextInsights(text: string) {
+    const paragraphs = text
+      .split('\n\n')
+      .map(p => {
+        const trimmed = p.trim();
+        if (!trimmed) return '';
+        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+          const listItems = trimmed
+            .split('\n')
+            .map(li => `<li>${li.replace(/^[-*]\s*/, '')}</li>`)
+            .join('');
+          return `<ul class="list-disc pl-5 space-y-1 text-sm text-slate-300">${listItems}</ul>`;
+        }
+        if (trimmed.startsWith('#')) {
+          const level = (trimmed.match(/^#+/) || ['#'])[0].length;
+          const cleanText = trimmed.replace(/^#+\s*/, '');
+          return `<h${Math.min(level + 2, 6)} class="text-lg font-bold text-white mt-4 mb-2">${cleanText}</h${Math.min(level + 2, 6)}>`;
+        }
+        return `<p class="text-sm text-slate-300 mb-3">${trimmed.replace(/\n/g, '<br>')}</p>`;
+      })
+      .filter(Boolean)
+      .join('');
+
+    aiInsightsOutput.innerHTML = `<div class="space-y-3">${paragraphs}</div>`;
+  }
+
   // ── AI Optimiser events ──
   optimiserRuleSelect.addEventListener('change', () => {
-    optimiserBtn.disabled = !optimiserRuleSelect.value;
+    const selectedRule = optimiserRuleSelect.value;
+    optimiserBtn.disabled = !selectedRule;
+    if (selectedRule && selectedRule === currentOptimisedRule && optimiserLoaded) {
+      optimiserBtnText.textContent = optimiserOpen ? "Close Output" : "Show Output";
+    } else {
+      optimiserBtnText.textContent = "Optimise";
+    }
   });
 
   optimiserBtn.addEventListener('click', async () => {
     const selectedRule = optimiserRuleSelect.value;
     if (!currentToken || !scanId || !selectedRule) return;
+
+    if (optimiserLoaded && selectedRule === currentOptimisedRule) {
+      if (optimiserOpen) {
+        optimiserContentArea.classList.add('hidden');
+        optimiserBtnText.textContent = "Show Output";
+        optimiserOpen = false;
+      } else {
+        optimiserContentArea.classList.remove('hidden');
+        optimiserBtnText.textContent = "Close Output";
+        optimiserOpen = true;
+      }
+      return;
+    }
 
     optimiserBtn.disabled = true;
     optimiserBtnText.textContent = "Optimising...";
@@ -485,18 +1041,49 @@ import Layout from '../layouts/Layout.astro';
 
       renderAiTextInsightsForOptimiser(aiText);
       optimiserContentArea.classList.remove('hidden');
+      optimiserLoaded = true;
+      optimiserOpen = true;
+      currentOptimisedRule = selectedRule;
+      optimiserBtnText.textContent = "Close Output";
     } catch (err: any) {
       console.error(err);
       alert(err.message || "Failed to generate optimisation.");
     } finally {
       optimiserBtn.disabled = false;
-      optimiserBtnText.textContent = "Optimise";
+      if (optimiserLoaded && selectedRule === currentOptimisedRule) {
+        optimiserBtnText.textContent = optimiserOpen ? "Close Output" : "Show Output";
+      } else {
+        optimiserBtnText.textContent = "Optimise";
+      }
       optimiserBtnSpinner.classList.add('hidden');
     }
   });
 
+  if (closeOptimiserBtn) {
+    closeOptimiserBtn.addEventListener('click', () => {
+      optimiserContentArea.classList.add('hidden');
+      optimiserOpen = false;
+      if (optimiserRuleSelect.value === currentOptimisedRule) {
+        optimiserBtnText.textContent = "Show Output";
+      } else {
+        optimiserBtnText.textContent = "Optimise";
+      }
+    });
+  }
+
+  if (closeOptimiserBtnBottom) {
+    closeOptimiserBtnBottom.addEventListener('click', () => {
+      optimiserContentArea.classList.add('hidden');
+      optimiserOpen = false;
+      if (optimiserRuleSelect.value === currentOptimisedRule) {
+        optimiserBtnText.textContent = "Show Output";
+      } else {
+        optimiserBtnText.textContent = "Optimise";
+      }
+    });
+  }
+
   function renderAiTextInsightsForOptimiser(text: string) {
-    // 1. Clean and parse JSON
     let cleanText = text.trim();
     if (cleanText.startsWith('```')) {
       cleanText = cleanText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
@@ -506,7 +1093,6 @@ import Layout from '../layouts/Layout.astro';
     try {
       data = JSON.parse(cleanText);
     } catch (e) {
-      // Relaxed JSON parsing
       const jsonStart = cleanText.indexOf('{');
       const jsonEnd = cleanText.lastIndexOf('}');
       if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
@@ -518,75 +1104,64 @@ import Layout from '../layouts/Layout.astro';
       }
     }
 
-    // 2. Render UI
-    const titleText = data?.recommendationTitle || data?.title;
+    const titleText = data?.recommendationTitle || data?.title || 'Optimisation Fix';
     if (data && typeof data === 'object' && titleText) {
-      
-      // Format list of steps helper (handles array or string)
       const formatSteps = (steps: any): string => {
         if (!steps) return '';
         if (Array.isArray(steps)) {
-          const listItems = steps.map(step => `<li>${escapeHTML(step)}</li>`).join('');
-          return `<ol class="opt-steps-list">${listItems}</ol>`;
+          const listItems = steps.map(step => `<li class="text-sm text-slate-300">${escapeHTML(step)}</li>`).join('');
+          return `<ol class="list-decimal pl-5 space-y-1">${listItems}</ol>`;
         }
         const stepsStr = String(steps);
         const lines = stepsStr.split('\n').map(line => line.trim()).filter(Boolean);
         if (lines.length > 1) {
           const listItems = lines.map(line => {
             const cleanLine = line.replace(/^\d+[\.\)]\s*/, '').replace(/^[-*+]\s*/, '');
-            return `<li>${escapeHTML(cleanLine)}</li>`;
+            return `<li class="text-sm text-slate-300">${escapeHTML(cleanLine)}</li>`;
           }).join('');
-          return `<ol class="opt-steps-list">${listItems}</ol>`;
+          return `<ol class="list-decimal pl-5 space-y-1">${listItems}</ol>`;
         }
-        return `<p class="opt-text">${escapeHTML(stepsStr)}</p>`;
+        return `<p class="text-sm text-slate-300">${escapeHTML(stepsStr)}</p>`;
       };
 
-      // Format alternatives helper
       const renderAlternatives = (alts: any): string => {
         if (!alts || !Array.isArray(alts) || alts.length === 0) return '';
         const items = alts.map(alt => `
-          <div class="opt-alternative-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
+          <div class="flex items-center gap-2 text-sm text-purple-400 font-medium bg-purple-500/5 px-3 py-1.5 rounded-lg border border-purple-500/10">
+            <i class="w-4 h-4 text-purple-400 flex-shrink-0" data-lucide="check"></i>
             <span>${escapeHTML(alt)}</span>
           </div>
         `).join('');
-        return `<div class="opt-alternatives-container">${items}</div>`;
+        return `<div class="flex flex-wrap gap-2 mt-2">${items}</div>`;
       };
 
-      // Format generated content helper
       const renderGeneratedContent = (content: any): string => {
         if (!content) return '';
         if (typeof content === 'string') {
           return `
-            <div class="opt-meta-table">
-              <div class="opt-meta-row">
-                <span class="opt-meta-key">Recommendation</span>
-                <span class="opt-meta-val">
-                  <span class="opt-meta-val-text">${escapeHTML(content)}</span>
-                  <button class="opt-meta-copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500)">Copy</button>
-                </span>
+            <div class="border border-white/5 rounded-lg overflow-hidden bg-black/20 text-xs">
+              <div class="flex justify-between items-center bg-white/5 px-4 py-2 border-b border-white/5">
+                <span class="font-bold text-slate-400 uppercase tracking-widest text-[9px]">Recommendation</span>
+                <button class="text-accent hover:text-white font-semibold uppercase tracking-wider text-[9px] hover:underline" onclick="navigator.clipboard.writeText(this.closest('.border').querySelector('.code-val').innerText); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500)">Copy</button>
               </div>
+              <pre class="p-4 text-emerald-400 font-mono overflow-x-auto code-val">${escapeHTML(content)}</pre>
             </div>
           `;
         }
         if (typeof content === 'object') {
           const rows = Object.entries(content).map(([key, val]) => {
-            const formattedKey = key
-              .replace(/_/g, ' ')
-              .replace(/\b\w/g, c => c.toUpperCase());
+            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
             return `
-              <div class="opt-meta-row">
-                <span class="opt-meta-key">${escapeHTML(formattedKey)}</span>
-                <span class="opt-meta-val">
-                  <span class="opt-meta-val-text">${escapeHTML(String(val))}</span>
-                  <button class="opt-meta-copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500)">Copy</button>
-                </span>
+              <div class="border border-white/5 rounded-lg overflow-hidden bg-black/20 text-xs">
+                <div class="flex justify-between items-center bg-white/5 px-4 py-2 border-b border-white/5">
+                  <span class="font-bold text-slate-400 uppercase tracking-widest text-[9px]">${escapeHTML(formattedKey)}</span>
+                  <button class="text-accent hover:text-white font-semibold uppercase tracking-wider text-[9px] hover:underline" onclick="navigator.clipboard.writeText(this.closest('.border').querySelector('.code-val').innerText); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500)">Copy</button>
+                </div>
+                <pre class="p-4 text-emerald-400 font-mono overflow-x-auto code-val">${escapeHTML(String(val))}</pre>
               </div>
             `;
           }).join('');
-          return `<div class="opt-meta-table">${rows}</div>`;
+          return `<div class="space-y-4">${rows}</div>`;
         }
         return '';
       };
@@ -596,579 +1171,133 @@ import Layout from '../layouts/Layout.astro';
       const whyItMattersText = data.whyItMatters || data.why;
 
       optimiserOutput.innerHTML = `
-        <div class="opt-card">
-          <style>
-            .opt-card {
-              background: rgba(15, 23, 42, 0.45);
-              border: 1px solid rgba(168, 85, 247, 0.25);
-              border-radius: 12px;
-              padding: 24px;
-              display: flex;
-              flex-direction: column;
-              gap: 20px;
-              color: var(--text-primary);
-              box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-              backdrop-filter: blur(8px);
-              animation: fadeIn 0.4s ease-out;
-            }
-            
-            @keyframes fadeIn {
-              from { opacity: 0; transform: translateY(8px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-
-            .opt-header {
-              display: flex;
-              align-items: center;
-              gap: 14px;
-              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-              padding-bottom: 16px;
-            }
-
-            .opt-icon-wrapper {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              width: 42px;
-              height: 42px;
-              border-radius: 10px;
-              background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
-              border: 1px solid rgba(168, 85, 247, 0.35);
-              color: #c084fc;
-              flex-shrink: 0;
-            }
-
-            .opt-header-text {
-              display: flex;
-              flex-direction: column;
-              gap: 4px;
-            }
-
-            .opt-badge {
-              font-size: 10px;
-              font-weight: 700;
-              letter-spacing: 0.08em;
-              color: #c084fc;
-              text-transform: uppercase;
-            }
-
-            .opt-header-text h4 {
-              margin: 0;
-              font-size: 17px;
-              font-weight: 700;
-              color: #ffffff;
-              line-height: 1.4;
-            }
-
-            .opt-section {
-              display: flex;
-              flex-direction: column;
-              gap: 8px;
-            }
-
-            .opt-section-title {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              color: rgba(255, 255, 255, 0.9);
-            }
-
-            .opt-section-title svg {
-              color: #818cf8;
-              flex-shrink: 0;
-            }
-
-            .opt-section-title h5 {
-              margin: 0;
-              font-size: 13px;
-              font-weight: 700;
-              text-transform: uppercase;
-              letter-spacing: 0.05em;
-            }
-
-            .opt-text {
-              margin: 0;
-              font-size: 14px;
-              line-height: 1.6;
-              color: rgba(241, 245, 249, 0.85);
-            }
-
-            .opt-text.highlight {
-              background: rgba(168, 85, 247, 0.06);
-              border-left: 3px solid #a855f7;
-              padding: 8px 12px;
-              border-radius: 0 6px 6px 0;
-            }
-
-            .opt-summary-section {
-              background: rgba(255, 255, 255, 0.02);
-              border: 1px dashed rgba(255, 255, 255, 0.12);
-              border-radius: 8px;
-              padding: 14px 18px;
-              font-size: 14px;
-              line-height: 1.5;
-              color: rgba(255, 255, 255, 0.95);
-            }
-
-            .opt-reasoning-section {
-              background: rgba(129, 140, 248, 0.03);
-              border-left: 3px solid #818cf8;
-              padding: 12px 16px;
-              border-radius: 0 8px 8px 0;
-            }
-
-            .opt-why-section {
-              background: rgba(99, 102, 241, 0.03);
-              border-left: 3px solid #6366f1;
-              padding: 12px 16px;
-              border-radius: 0 8px 8px 0;
-            }
-
-            .opt-steps-list {
-              margin: 4px 0 0 0;
-              padding-left: 20px;
-              display: flex;
-              flex-direction: column;
-              gap: 8px;
-            }
-
-            .opt-steps-list li {
-              font-size: 14px;
-              line-height: 1.55;
-              color: rgba(241, 245, 249, 0.85);
-            }
-
-            .opt-alternatives-container {
-              display: flex;
-              flex-direction: column;
-              gap: 8px;
-              margin-top: 4px;
-              background: rgba(15, 23, 42, 0.2);
-              border: 1px solid rgba(255, 255, 255, 0.08);
-              border-radius: 8px;
-              padding: 12px 16px;
-            }
-
-            .opt-alternative-item {
-              display: flex;
-              align-items: center;
-              gap: 10px;
-              font-size: 13.5px;
-              color: rgba(241, 245, 249, 0.85);
-            }
-
-            .opt-alternative-item svg {
-              flex-shrink: 0;
-            }
-
-            .opt-code-container {
-              position: relative;
-              background: #090d16;
-              border: 1px solid rgba(255, 255, 255, 0.06);
-              border-radius: 8px;
-              overflow: hidden;
-              margin-top: 4px;
-            }
-
-            .opt-code-container pre {
-              margin: 0;
-              padding: 16px;
-              overflow-x: auto;
-            }
-
-            .opt-code-block {
-              font-family: 'Fira Code', 'Courier New', Courier, monospace;
-              font-size: 13px;
-              line-height: 1.5;
-              color: #34d399;
-            }
-
-            .opt-copy-btn {
-              position: absolute;
-              top: 8px;
-              right: 8px;
-              background: rgba(255, 255, 255, 0.06);
-              border: 1px solid rgba(255, 255, 255, 0.1);
-              border-radius: 4px;
-              padding: 4px 8px;
-              font-size: 11px;
-              color: rgba(255, 255, 255, 0.7);
-              cursor: pointer;
-              font-family: inherit;
-              transition: all 0.15s;
-            }
-
-            .opt-copy-btn:hover {
-              background: rgba(255, 255, 255, 0.12);
-              color: #ffffff;
-            }
-
-            .opt-meta-table {
-              display: flex;
-              flex-direction: column;
-              border: 1px solid rgba(255, 255, 255, 0.08);
-              border-radius: 8px;
-              overflow: hidden;
-              margin-top: 4px;
-              background: rgba(15, 23, 42, 0.2);
-            }
-
-            .opt-meta-row {
-              display: flex;
-              border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            }
-
-            .opt-meta-row:last-child {
-              border-bottom: none;
-            }
-
-            .opt-meta-key {
-              width: 140px;
-              padding: 10px 14px;
-              background: rgba(255, 255, 255, 0.03);
-              border-right: 1px solid rgba(255, 255, 255, 0.06);
-              font-size: 11px;
-              font-weight: 700;
-              color: rgba(255, 255, 255, 0.6);
-              text-transform: uppercase;
-              display: flex;
-              align-items: center;
-              flex-shrink: 0;
-            }
-
-            .opt-meta-val {
-              flex: 1;
-              padding: 10px 14px;
-              font-size: 13.5px;
-              color: #38bdf8;
-              line-height: 1.4;
-              word-break: break-word;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              gap: 12px;
-            }
-
-            .opt-meta-val-text {
-              flex: 1;
-            }
-
-            .opt-meta-copy-btn {
-              background: rgba(56, 189, 248, 0.08);
-              border: 1px solid rgba(56, 189, 248, 0.2);
-              border-radius: 4px;
-              padding: 2px 8px;
-              font-size: 10px;
-              color: #38bdf8;
-              cursor: pointer;
-              font-family: inherit;
-              font-weight: 600;
-              transition: all 0.15s;
-              flex-shrink: 0;
-            }
-
-            .opt-meta-copy-btn:hover {
-              background: rgba(56, 189, 248, 0.18);
-              color: #ffffff;
-            }
-          </style>
-
+        <div class="glass-card p-6 bg-purple-500/5 border border-purple-500/20 space-y-5">
           <!-- Header -->
-          <div class="opt-header">
-            <div class="opt-icon-wrapper">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
+          <div class="flex items-center gap-4 border-b border-white/5 pb-4">
+            <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 flex-shrink-0">
+              <i class="w-5 h-5" data-lucide="zap"></i>
             </div>
-            <div class="opt-header-text">
-              <span class="opt-badge">AI Recommendation</span>
-              <h4>${escapeHTML(titleText)}</h4>
+            <div>
+              <span class="text-[10px] text-purple-400 font-bold uppercase tracking-wider">AI Recommendation</span>
+              <h4 class="font-bold text-white text-lg">${escapeHTML(titleText)}</h4>
             </div>
           </div>
 
-          <!-- Summary (if any) -->
+          <!-- Summary -->
           ${summaryText && summaryText.trim() !== '' ? `
-            <div class="opt-summary-section">
-              <strong>Summary:</strong> ${escapeHTML(summaryText)}
+            <div>
+              <span class="text-xs uppercase text-slate-500 font-bold block mb-1">Summary</span>
+              <p class="text-sm text-slate-300">${escapeHTML(summaryText)}</p>
             </div>
           ` : ''}
 
-          <!-- Reasoning (if any) -->
+          <!-- Reasoning -->
           ${reasoningText && reasoningText.trim() !== '' ? `
-            <div class="opt-section opt-reasoning-section">
-              <div class="opt-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
-                </svg>
-                <h5>AI Reasoning</h5>
-              </div>
-              <p class="opt-text">${escapeHTML(reasoningText)}</p>
+            <div>
+              <span class="text-xs uppercase text-slate-500 font-bold block mb-1">Reasoning</span>
+              <p class="text-sm text-slate-300">${escapeHTML(reasoningText)}</p>
             </div>
           ` : ''}
 
-          <!-- Why This Matters -->
+          <!-- Why It Matters -->
           ${whyItMattersText && whyItMattersText.trim() !== '' ? `
-            <div class="opt-section opt-why-section">
-              <div class="opt-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
-                <h5>Why This Matters</h5>
-              </div>
-              <p class="opt-text">${escapeHTML(whyItMattersText)}</p>
+            <div>
+              <span class="text-xs uppercase text-slate-500 font-bold block mb-1">Why It Matters</span>
+              <p class="text-sm text-slate-300">${escapeHTML(whyItMattersText)}</p>
             </div>
           ` : ''}
 
-          <!-- How to Implement -->
-          ${data.implementation && (!Array.isArray(data.implementation) || data.implementation.length > 0) ? `
-            <div class="opt-section">
-              <div class="opt-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                </svg>
-                <h5>How to Implement</h5>
-              </div>
-              ${formatSteps(data.implementation)}
+          <!-- Steps -->
+          ${data.steps ? `
+            <div>
+              <span class="text-xs uppercase text-slate-500 font-bold block mb-2">Steps to Fix</span>
+              ${formatSteps(data.steps)}
             </div>
           ` : ''}
 
-          <!-- Generated Content (if any) -->
-          ${data.generatedContent && (typeof data.generatedContent !== 'object' || Object.keys(data.generatedContent).length > 0) ? `
-            <div class="opt-section">
-              <div class="opt-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                </svg>
-                <h5>AI Recommendation</h5>
-              </div>
+          <!-- Code Recommendations -->
+          ${data.generatedContent ? `
+            <div>
+              <span class="text-xs uppercase text-slate-500 font-bold block mb-2">Optimised Content</span>
               ${renderGeneratedContent(data.generatedContent)}
             </div>
           ` : ''}
 
-          <!-- Alternatives (if any) -->
-          ${data.alternatives && Array.isArray(data.alternatives) && data.alternatives.length > 0 ? `
-            <div class="opt-section">
-              <div class="opt-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                </svg>
-                <h5>Alternative Options</h5>
-              </div>
+          <!-- Alternatives -->
+          ${data.alternatives ? `
+            <div>
+              <span class="text-xs uppercase text-slate-500 font-bold block mb-1">Alternative Options</span>
               ${renderAlternatives(data.alternatives)}
-            </div>
-          ` : ''}
-
-          <!-- Code Change (if any) -->
-          ${data.code && data.code !== 'null' && String(data.code).trim() !== '' ? `
-            <div class="opt-section">
-              <div class="opt-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-                </svg>
-                <h5>Implementation Example</h5>
-              </div>
-              <div class="opt-code-container">
-                <pre><code class="opt-code-block" id="opt-code-snippet">${escapeHTML(data.code)}</code></pre>
-                <button class="opt-copy-btn" id="opt-copy-btn-el">Copy Code</button>
-              </div>
             </div>
           ` : ''}
         </div>
       `;
-
-      // Set up click handler for Copy Code button if it exists
-      if (data.code && data.code !== 'null' && String(data.code).trim() !== '') {
-        setTimeout(() => {
-          const copyBtn = document.getElementById('opt-copy-btn-el');
-          if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-              navigator.clipboard.writeText(data.code);
-              copyBtn.innerText = 'Copied!';
-              copyBtn.style.color = '#34d399';
-              setTimeout(() => {
-                copyBtn.innerText = 'Copy Code';
-                copyBtn.style.color = '';
-              }, 2000);
-            });
-          }
-        }, 50);
-      }
     } else {
-      // Fallback markdown rendering
-      const paragraphs = text
-        .split('\n\n')
-        .map(p => {
-          const trimmed = p.trim();
-          if (!trimmed) return '';
-          if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
-            const listItems = trimmed
-              .split('\n')
-              .map(li => `<li>${escapeHTML(li.replace(/^[-*]\s*/, ''))}</li>`)
-              .join('');
-            return `<ul>${listItems}</ul>`;
-          }
-          if (trimmed.startsWith('#')) {
-            const level = (trimmed.match(/^#+/) || ['#'])[0].length;
-            const cleanText = trimmed.replace(/^#+\s*/, '');
-            return `<h${Math.min(level + 2, 6)}>${escapeHTML(cleanText)}</h${Math.min(level + 2, 6)}>`;
-          }
-          return `<p>${escapeHTML(trimmed).replace(/\n/g, '<br>')}</p>`;
-        })
-        .filter(Boolean)
-        .join('');
-
-      optimiserOutput.innerHTML = `<div class="ai-raw-text">${paragraphs}</div>`;
+      optimiserOutput.innerHTML = `
+        <div class="glass-card p-6 bg-purple-500/5 border border-purple-500/20 text-sm text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">
+          ${escapeHTML(text)}
+        </div>
+      `;
+    }
+    
+    if (window.lucide) {
+      window.lucide.createIcons();
     }
   }
 
   function escapeHTML(str: string): string {
     return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function renderAiJsonInsights(data: any) {
-    let html = '';
-
-    // 1. Render Summary (executiveSummary and overallAssessment)
-    if (data.summary && typeof data.summary === 'object') {
-      const execSummary = data.summary.executiveSummary || data.summary.executive_summary || '';
-      const assessment = data.summary.overallAssessment || data.summary.overall_assessment || '';
-      
-      if (execSummary || assessment) {
-        html += `
-          <div class="ai-overall-summary">
-            ${execSummary ? `
-              <div class="summary-section">
-                <h5>Executive Summary</h5>
-                <p>${execSummary}</p>
-              </div>
-            ` : ''}
-            ${assessment ? `
-              <div class="summary-section" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(168, 85, 247, 0.25);">
-                <h5 style="color: #c084fc;">Overall Assessment</h5>
-                <p>${assessment}</p>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }
-    } else if (data.summary && typeof data.summary === 'string') {
-      html += `
-        <div class="ai-overall-summary">
-          <h5>Executive Summary</h5>
-          <p>${data.summary}</p>
-        </div>
-      `;
-    }
-
-    // 2. Render Top Priorities List
-    const priorities = data.topPriorities || data.top_priorities || data.priorities;
-    if (priorities && Array.isArray(priorities) && priorities.length > 0) {
-      html += `
-        <div class="ai-priorities-card">
-          <div class="priorities-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <h5>Top Action Priorities</h5>
-          </div>
-          <ul class="priorities-list">
-            ${priorities.map(p => `<li>${p}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-    // 3. Render Recommendations Grid
-    const recommendations = data.recommendations || data.issues || data.results || (Array.isArray(data) ? data : null);
-
-    if (recommendations && Array.isArray(recommendations)) {
-      html += `<div class="ai-insights-grid">`;
-      recommendations.forEach((item: any, idx: number) => {
-        const title = item.title || item.issue || item.check || item.name || `Insight #${idx + 1}`;
-        const whyItMatters = item.whyItMatters || item.why_it_matters || item.description || item.explanation || item.message || item.summary || '';
-        const actionPlan = item.actionPlan || item.action_plan || item.action || item.recommendation || item.fix || item.solution || '';
-        const example = item.example || null;
-        const ruleId = item.ruleId || item.rule_id || '';
-
-        html += `
-          <div class="ai-insight-card">
-            <div class="ai-insight-title-row">
-              <span class="ai-insight-number">${idx + 1}</span>
-              <div style="display: flex; flex-direction: column; gap: 2px;">
-                <h4>${title}</h4>
-                ${ruleId ? `<span class="ai-rule-id">${ruleId}</span>` : ''}
-              </div>
-            </div>
-            ${whyItMatters ? `
-              <div class="ai-insight-desc">
-                <h5>Why it matters:</h5>
-                <p>${whyItMatters}</p>
-              </div>
-            ` : ''}
-            ${actionPlan ? `
-              <div class="ai-insight-action">
-                <h5>Action Plan:</h5>
-                <p>${actionPlan}</p>
-              </div>
-            ` : ''}
-            ${example ? `
-              <div class="ai-insight-example">
-                <h5>Example Code:</h5>
-                <pre class="example-pre"><code>${escapeHTML(example)}</code></pre>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      });
-      html += `</div>`;
-    }
-
-    // Fallback if formatting resulted in empty HTML
-    aiInsightsOutput.innerHTML = html || `<pre class="ai-raw-text">${JSON.stringify(data, null, 2)}</pre>`;
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   /* ── Fetch project scans for comparison ── */
   const compareSkeleton  = document.getElementById('compare-skeleton') as HTMLDivElement;
   const compareEmpty     = document.getElementById('compare-empty') as HTMLDivElement;
-  const compareTwoCols   = document.getElementById('compare-two-cols') as HTMLDivElement;
-  const scanAList        = document.getElementById('scan-a-list') as HTMLDivElement;
   const scanBList        = document.getElementById('scan-b-list') as HTMLDivElement;
-  const scanAHint        = document.getElementById('scan-a-hint') as HTMLSpanElement;
   const scanBHint        = document.getElementById('scan-b-hint') as HTMLSpanElement;
   const compareBtn       = document.getElementById('compare-btn') as HTMLButtonElement;
   const compareBtnText   = document.getElementById('compare-btn-text') as HTMLSpanElement;
   const compareBtnSpinner = document.getElementById('compare-btn-spinner') as HTMLDivElement;
   const compareResult    = document.getElementById('compare-result') as HTMLDivElement;
+  const compareResultArea = document.getElementById('compare-result-area') as HTMLDivElement;
+  const closeCompareBtn   = document.getElementById('close-compare-btn') as HTMLButtonElement;
+  const closeCompareBtnBottom = document.getElementById('close-compare-btn-bottom') as HTMLButtonElement;
+
+  let compareLoaded = false;
+  let compareOpen = false;
+  let currentComparedScan: string | null = null;
 
   function buildScanRow(s: { id: string; url: string; started_at: string }, col: 'a' | 'b', isCurrent: boolean) {
     const date = s.started_at
       ? new Date(s.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
       : 'Unknown date';
     const shortUrl = s.url.replace(/^https?:\/\//, '').replace(/\/$/, '').substring(0, 48);
-    const currentTag = isCurrent ? '<span class="compare-current-tag">current page</span>' : '';
+    const currentTag = isCurrent ? '<span class="text-[9px] font-bold text-accent uppercase bg-accent/10 px-1.5 py-0.5 rounded ml-2">Current</span>' : '';
     return `
       <label class="compare-scan-row" data-id="${s.id}" data-col="${col}">
-        <div class="compare-scan-checkbox">
-          <input type="radio" name="compare-scan-${col}" value="${s.id}" id="cscan-${col}-${s.id}" class="cscan-radio cscan-radio-${col}">
-          <div class="custom-radio"></div>
+        <div class="flex items-center gap-2">
+          <input type="radio" name="compare-scan-${col}" value="${s.id}" id="cscan-${col}-${s.id}" class="w-4 h-4 text-accent bg-black/40 border-white/10 focus:ring-accent focus:ring-offset-0 focus:ring-1">
         </div>
-        <div class="compare-scan-info">
-          <span class="compare-scan-url" title="${s.url}">${shortUrl} ${currentTag}</span>
-          <span class="compare-scan-date">${date}</span>
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-semibold text-white truncate flex items-center" title="${s.url}">${shortUrl} ${currentTag}</span>
+          <span class="text-xs text-slate-500 font-mono mt-0.5">${date}</span>
         </div>
       </label>
     `;
   }
 
   function updateCompareBtn() {
-    compareBtn.disabled = !(selectedScanA && selectedScanB && selectedScanA !== selectedScanB);
+    if (selectedScanB && selectedScanB === currentComparedScan && compareLoaded) {
+      compareBtn.disabled = false;
+      compareBtnText.textContent = compareOpen ? "Close Comparison" : "Show Comparison";
+    } else {
+      compareBtn.disabled = !selectedScanB;
+      compareBtnText.textContent = "Compare Scans";
+    }
   }
 
   async function fetchProjectScans() {
@@ -1183,47 +1312,30 @@ import Layout from '../layouts/Layout.astro';
 
       compareSkeleton.classList.add('hidden');
 
-      if (scans.length < 2) {
+      const otherScans = scans.filter(s => s.id !== scanId);
+
+      if (otherScans.length === 0) {
         compareEmpty.classList.remove('hidden');
         return;
       }
 
-      compareTwoCols.classList.remove('hidden');
+      const compareSingleCol = document.getElementById('compare-single-col') as HTMLDivElement;
+      if (compareSingleCol) {
+        compareSingleCol.classList.remove('hidden');
+      }
       compareBtn.classList.remove('hidden');
 
-      // Render both columns with all scans
-      scanAList.innerHTML = scans.map(s => buildScanRow(s, 'a', s.id === scanId)).join('');
-      scanBList.innerHTML = scans.map(s => buildScanRow(s, 'b', s.id === scanId)).join('');
-
-      // Pre-select current scan as Scan A
-      const defaultA = scanAList.querySelector<HTMLInputElement>(`input[value="${scanId}"]`);
-      if (defaultA) {
-        defaultA.checked = true;
-        defaultA.closest('.compare-scan-row')?.classList.add('selected');
-        selectedScanA = scanId;
-        scanAHint.textContent = 'This page (auto-selected)';
-      }
-
-      // Wire Scan A radios
-      scanAList.querySelectorAll<HTMLInputElement>('.cscan-radio-a').forEach(radio => {
-        radio.addEventListener('change', () => {
-          selectedScanA = radio.value;
-          scanAList.querySelectorAll('.compare-scan-row').forEach(r => r.classList.remove('selected'));
-          radio.closest('.compare-scan-row')?.classList.add('selected');
-          const label = radio.closest('.compare-scan-row')?.querySelector('.compare-scan-url')?.textContent?.split(' ')[0] || radio.value.slice(0,8);
-          scanAHint.textContent = label + '…';
-          updateCompareBtn();
-        });
-      });
+      scanBList.innerHTML = otherScans.map(s => buildScanRow(s, 'b', false)).join('');
 
       // Wire Scan B radios
-      scanBList.querySelectorAll<HTMLInputElement>('.cscan-radio-b').forEach(radio => {
+      scanBList.querySelectorAll<HTMLInputElement>('input[name="compare-scan-b"]').forEach(radio => {
         radio.addEventListener('change', () => {
           selectedScanB = radio.value;
           scanBList.querySelectorAll('.compare-scan-row').forEach(r => r.classList.remove('selected'));
           radio.closest('.compare-scan-row')?.classList.add('selected');
-          const label = radio.closest('.compare-scan-row')?.querySelector('.compare-scan-url')?.textContent?.split(' ')[0] || radio.value.slice(0,8);
+          const label = radio.closest('.compare-scan-row')?.querySelector('.text-sm')?.textContent?.split(' ')[0] || radio.value.slice(0,8);
           scanBHint.textContent = label + '…';
+          selectedScanA = scanId; // Always compare with the current scan
           updateCompareBtn();
         });
       });
@@ -1237,16 +1349,26 @@ import Layout from '../layouts/Layout.astro';
 
   /* ── Handle comparison request ── */
   compareBtn.addEventListener('click', async () => {
+    selectedScanA = scanId; // Ensure A is the current scan
     if (!currentToken || !selectedScanA || !selectedScanB) return;
-    if (selectedScanA === selectedScanB) {
-      alert('Please select two different scans to compare.');
+
+    if (compareLoaded && selectedScanB === currentComparedScan) {
+      if (compareOpen) {
+        compareResultArea.classList.add('hidden');
+        compareBtnText.textContent = 'Show Comparison';
+        compareOpen = false;
+      } else {
+        compareResultArea.classList.remove('hidden');
+        compareBtnText.textContent = 'Close Comparison';
+        compareOpen = true;
+      }
       return;
     }
 
     compareBtn.disabled = true;
     compareBtnText.textContent = 'Comparing...';
     compareBtnSpinner.classList.remove('hidden');
-    compareResult.classList.add('hidden');
+    compareResultArea.classList.add('hidden');
 
     try {
       const res = await fetch(`http://localhost:3000/api/v1/report-comparison?currscan=${selectedScanA}&prevscan=${selectedScanB}`, {
@@ -1258,16 +1380,48 @@ import Layout from '../layouts/Layout.astro';
       }
       const body = await res.json();
       renderComparisonResult(body.data, body.aiReport);
-      compareResult.classList.remove('hidden');
-      compareResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      compareResultArea.classList.remove('hidden');
+      compareResultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      compareLoaded = true;
+      compareOpen = true;
+      currentComparedScan = selectedScanB;
+      compareBtnText.textContent = 'Close Comparison';
     } catch (err: any) {
       alert(err.message || 'Failed to compare reports.');
     } finally {
       compareBtn.disabled = false;
-      compareBtnText.textContent = 'Compare Selected Scans';
+      if (compareLoaded && selectedScanB === currentComparedScan) {
+        compareBtnText.textContent = compareOpen ? 'Close Comparison' : 'Show Comparison';
+      } else {
+        compareBtnText.textContent = 'Compare Scans';
+      }
       compareBtnSpinner.classList.add('hidden');
     }
   });
+
+  if (closeCompareBtn) {
+    closeCompareBtn.addEventListener('click', () => {
+      compareResultArea.classList.add('hidden');
+      compareOpen = false;
+      if (selectedScanB === currentComparedScan) {
+        compareBtnText.textContent = 'Show Comparison';
+      } else {
+        compareBtnText.textContent = 'Compare Scans';
+      }
+    });
+  }
+
+  if (closeCompareBtnBottom) {
+    closeCompareBtnBottom.addEventListener('click', () => {
+      compareResultArea.classList.add('hidden');
+      compareOpen = false;
+      if (selectedScanB === currentComparedScan) {
+        compareBtnText.textContent = 'Show Comparison';
+      } else {
+        compareBtnText.textContent = 'Compare Scans';
+      }
+    });
+  }
 
   function renderComparisonResult(data: any, aiReport: string | null = null) {
     const scores  = data.scores  || {};
@@ -1275,1821 +1429,259 @@ import Layout from '../layouts/Layout.astro';
     const summary = data.summary || {};
     const changes = data.changes || {};
 
-    /* ── Parse AI JSON response ── */
     function renderAiReport(aiText: string): string {
       try {
-        // Strip out any markdown code block wrappers if the AI wrapped the JSON
         const cleanText = aiText.replace(/```json/gi, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(cleanText);
 
         const summaryHtml = (parsed.executiveSummary || parsed.executive_summary)
-          ? `<div class="cr-ai-exec-summary">${parsed.executiveSummary || parsed.executive_summary}</div>` 
+          ? `<div class="text-sm text-slate-300 leading-relaxed">${parsed.executiveSummary || parsed.executive_summary}</div>` 
           : '';
 
         const recsHtml = (parsed.recommendations || []).map((rec: any, i: number) => `
-          <div class="cr-ai-rec">
-            <div class="cr-ai-rec-header">
-              <span class="cr-ai-rec-num">${i + 1}</span>
-              <h4 class="cr-ai-h">${rec.issue || 'Recommendation'}</h4>
+          <div class="glass-card p-6 bg-white/[0.02] border border-white/5 space-y-4 hover:border-white/10 transition-all">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-full bg-accent/25 text-accent flex items-center justify-center text-xs font-bold border border-accent/20">${i + 1}</span>
+              <h4 class="font-bold text-white text-base">${escapeHTML(rec.issue || 'Recommendation')}</h4>
             </div>
-            <p class="cr-ai-p"><strong>Why it matters:</strong> ${rec.explanation || rec.why_it_matters || 'No explanation provided.'}</p>
-            <p class="cr-ai-p"><strong>Action:</strong> ${rec.action_plan || rec.action || 'No action plan provided.'}</p>
-            ${rec.html_example ? `<pre class="cr-ai-code">${rec.html_example.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>` : ''}
+            <div class="space-y-2 text-sm leading-relaxed">
+              <p class="text-slate-300"><span class="text-accent font-semibold">Why it matters:</span> ${escapeHTML(rec.explanation || rec.why_it_matters || 'No explanation provided.')}</p>
+              <p class="text-slate-300"><span class="text-accent font-semibold">Action Plan:</span> ${escapeHTML(rec.action_plan || rec.action || 'No action plan provided.')}</p>
+            </div>
+            ${rec.html_example ? `<pre class="bg-black/40 p-4 rounded-lg overflow-x-auto text-xs text-emerald-400 font-mono border border-white/5 mt-3"><code>${rec.html_example.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>` : ''}
           </div>
         `).join('');
 
         return `
-          ${summaryHtml}
-          ${recsHtml ? `<div class="cr-ai-recs">${recsHtml}</div>` : ''}
+          <div class="space-y-4">
+            ${summaryHtml}
+            ${recsHtml ? `<div class="grid grid-cols-1 gap-4 mt-4">${recsHtml}</div>` : ''}
+          </div>
         `;
       } catch (e) {
-        // Fallback if AI didn't return valid JSON
-        return `<p class="cr-ai-p">${aiText.replace(/\n/g, '<br>')}</p>`;
+        return `<p class="text-sm text-slate-300 leading-relaxed">${aiText.replace(/\n/g, '<br>')}</p>`;
       }
     }
 
     const delta      = scores.delta ?? 0;
-    const deltaColor = delta > 0 ? '#34d399' : delta < 0 ? '#f87171' : '#94a3b8';
-    const verdictBg  = meta.verdict === 'improved'  ? 'rgba(52,211,153,0.08)'
-                     : meta.verdict === 'regressed' ? 'rgba(248,113,113,0.08)'
-                     : 'rgba(148,163,184,0.08)';
-    const verdictBorder = meta.verdict === 'improved'  ? 'rgba(52,211,153,0.25)'
-                        : meta.verdict === 'regressed' ? 'rgba(248,113,113,0.25)'
-                        : 'rgba(148,163,184,0.2)';
+    const deltaColor = delta > 0 ? 'text-emerald-400' : delta < 0 ? 'text-red-400' : 'text-slate-400';
+    const verdictBg  = meta.verdict === 'improved'  ? 'bg-emerald-500/10'
+                     : meta.verdict === 'regressed' ? 'bg-red-500/10'
+                     : 'bg-white/5';
+    const verdictBorder = meta.verdict === 'improved'  ? 'border-emerald-500/20'
+                        : meta.verdict === 'regressed' ? 'border-red-500/20'
+                        : 'border-white/10';
 
-    /* ── Helper: render a ChangeGroup section ── */
-    const renderGroup = (group: any, colorClass: string, accentColor: string, icon: string) => {
+    const renderGroup = (group: any, badgeStyle: string, accentBorder: string, icon: string) => {
       if (!group || group.count === 0) return '';
       const itemsHtml = (group.items || []).map((r: any) => {
         const sd = r.scoreDelta ?? 0;
-        const sdColor  = sd > 0 ? '#34d399' : sd < 0 ? '#f87171' : '#94a3b8';
+        const sdColor  = sd > 0 ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' : sd < 0 ? 'text-red-400 border-red-500/20 bg-red-500/10' : 'text-slate-400 border-white/10 bg-white/5';
         const sdPrefix = sd > 0 ? '+' : '';
         return `
-          <div class="cr-rule-card">
-            <div class="cr-rule-head">
-              <span class="cr-status-pill ${colorClass}">${r.statusLabel || icon}</span>
-              <span class="cr-rule-title">${r.title || r.id || 'Unknown'}</span>
-              <span class="cr-category-tag">${r.category || ''}</span>
-              ${sd !== 0 ? `<span class="cr-score-delta" style="color:${sdColor}">${sdPrefix}${sd} pts</span>` : ''}
+          <div class="glass-card p-6 border border-white/5 bg-black/20 space-y-5">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${badgeStyle}">${escapeHTML(r.statusLabel || icon)}</span>
+              <span class="font-bold text-base text-white">${escapeHTML(r.title || r.id || 'Unknown')}</span>
+              <span class="text-xs text-slate-400 font-mono bg-white/5 px-2.5 py-1 rounded border border-white/5">${escapeHTML(r.category || '')}</span>
+              ${sd !== 0 ? `<span class="text-xs font-bold px-3 py-1 rounded-full border ${sdColor} ml-auto">${sdPrefix}${sd} pts</span>` : ''}
             </div>
-            <div class="cr-rule-before-after">
-              <div class="cr-ba-col before">
-                <span class="cr-ba-label">Before</span>
-                <span class="cr-ba-status ${r.before?.passed ? 'pass' : 'fail'}">${r.before?.passed ? '✓ Pass' : '✕ Fail'}</span>
-                <span class="cr-ba-msg">${r.before?.message || '—'}</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+              <!-- Before state -->
+              <div class="p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col gap-2">
+                <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> Before
+                </span>
+                <span class="text-xs font-semibold ${r.before?.passed ? 'text-emerald-400' : 'text-red-400'}">
+                  ${r.before?.passed ? '✓ Passed Check' : '✕ Failed Check'}
+                </span>
+                <p class="text-sm text-slate-400 leading-relaxed">${escapeHTML(r.before?.message || '—')}</p>
               </div>
-              <div class="cr-ba-arrow">→</div>
-              <div class="cr-ba-col after">
-                <span class="cr-ba-label">After</span>
-                <span class="cr-ba-status ${r.after?.passed ? 'pass' : 'fail'}">${r.after?.passed ? '✓ Pass' : '✕ Fail'}</span>
-                <span class="cr-ba-msg">${r.after?.message || '—'}</span>
+
+              <!-- After state -->
+              <div class="p-4 rounded-xl bg-accent/[0.02] border border-accent/15 flex flex-col gap-2">
+                <span class="text-[10px] uppercase tracking-wider text-accent font-bold flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent"></span> After
+                </span>
+                <span class="text-xs font-semibold ${r.after?.passed ? 'text-emerald-400' : 'text-red-400'}">
+                  ${r.after?.passed ? '✓ Passed Check' : '✕ Failed Check'}
+                </span>
+                <p class="text-sm text-slate-300 leading-relaxed">${escapeHTML(r.after?.message || '—')}</p>
               </div>
             </div>
             ${r.recommendation ? `
-              <div class="cr-recommendation">
-                <span class="cr-rec-label">💡 Recommendation</span>
-                <span class="cr-rec-text">${r.recommendation}</span>
+              <div class="bg-black/35 p-4 rounded-xl border border-white/5 text-sm text-slate-300">
+                <strong class="text-accent block mb-1">💡 Recommendation</strong>
+                <span>${escapeHTML(r.recommendation)}</span>
               </div>` : ''}
           </div>
         `;
       }).join('');
 
       return `
-        <div class="cr-group">
-          <div class="cr-group-header" style="border-left-color:${accentColor}">
-            <span class="cr-group-icon">${icon}</span>
-            <span class="cr-group-label">${group.label}</span>
-            <span class="cr-group-desc">${group.description}</span>
-            <span class="cr-group-count" style="background:${accentColor}20;color:${accentColor}">${group.count}</span>
+        <div class="space-y-6">
+          <div class="flex items-center gap-3 border-l-4 ${accentBorder} pl-4 py-1">
+            <span class="text-base font-bold text-white uppercase tracking-wider">${escapeHTML(group.label)}</span>
+            <span class="text-xs text-slate-400 hidden sm:inline">${escapeHTML(group.description)}</span>
+            <span class="ml-auto text-xs font-bold px-3 py-1 rounded-full bg-white/5 text-slate-400 border border-white/10">${group.count}</span>
           </div>
-          <div class="cr-group-items">${itemsHtml}</div>
+          <div class="space-y-4">${itemsHtml}</div>
         </div>
       `;
     };
 
     compareResult.innerHTML = `
-      ${aiReport ? `
-      <!-- AI Executive Summary -->
-      <div class="cr-ai-summary">
-        <div class="cr-ai-summary-header">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-          <span>AI Executive Summary</span>
-          <span class="cr-ai-badge">Gemini AI</span>
+      <div class="space-y-8 animate-fade-in">
+        ${aiReport ? `
+        <!-- AI Executive Summary -->
+        <div class="glass-card p-6 bg-accent/5 border border-accent/20 space-y-4">
+          <div class="flex items-center justify-between border-b border-white/5 pb-4">
+            <div class="flex items-center gap-2 text-white">
+              <i class="w-5 h-5 text-accent animate-pulse" data-lucide="sparkles"></i>
+              <span class="font-bold text-lg">AI Executive Summary</span>
+            </div>
+          </div>
+          <div>${renderAiReport(aiReport)}</div>
         </div>
-        <div class="cr-ai-body">${renderAiReport(aiReport)}</div>
-      </div>
-      ` : ''}
+        ` : ''}
 
-      <!-- Verdict Banner -->
-      <div class="cr-verdict" style="background:${verdictBg};border-color:${verdictBorder}">
-        <span class="cr-verdict-emoji">${meta.verdictEmoji || '➖'}</span>
-        <div class="cr-verdict-text">
-          <strong>${meta.verdictLabel || 'Comparison Complete'}</strong>
-          <span>${meta.changedChecks ?? 0} of ${meta.totalChecks ?? 0} checks changed</span>
+        <!-- Verdict Banner -->
+        <div class="p-5 rounded-lg border flex items-center gap-4 ${verdictBg} ${verdictBorder}">
+          <span class="text-2xl">${escapeHTML(meta.verdictEmoji || '➖')}</span>
+          <div class="flex flex-col">
+            <strong class="text-white text-base">${escapeHTML(meta.verdictLabel || 'Comparison Complete')}</strong>
+            <span class="text-xs text-slate-400">${meta.changedChecks ?? 0} of ${meta.totalChecks ?? 0} checks changed</span>
+          </div>
         </div>
-      </div>
 
-      <!-- Score Block -->
-      <div class="cr-score-block">
-        <div class="cr-score-side">
-          <span class="cr-score-role">Current Scan</span>
-          <span class="cr-score-num">${scores.current ?? '—'}</span>
-          <span class="cr-grade-pill" style="background:rgba(56,189,248,0.15);color:#38bdf8;border-color:rgba(56,189,248,0.3)">${scores.currentGrade ?? '—'}</span>
+        <!-- Score Block -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center justify-center text-center py-8 px-6 bg-surface-container/30 rounded-2xl border border-white/10 shadow-xl">
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-xs uppercase font-semibold text-slate-500 tracking-widest">Current Scan</span>
+            <span class="text-4xl font-extrabold text-white tracking-tight">${scores.current ?? '—'}</span>
+            <span class="text-xs font-bold bg-accent/20 text-accent px-3 py-1 rounded-full border border-accent/30">${scores.currentGrade ?? '—'}</span>
+          </div>
+          <div class="flex flex-col items-center justify-center py-4 sm:py-0 border-t border-b sm:border-t-0 sm:border-b-0 border-white/5 gap-1">
+            <span class="text-xs font-bold ${deltaColor} uppercase tracking-wider">${scores.deltaLabel || '—'}</span>
+            <span class="text-2xl font-black ${deltaColor}">${delta > 0 ? '▲' : delta < 0 ? '▼' : '●'}</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-xs uppercase font-semibold text-slate-500 tracking-widest">Previous Scan</span>
+            <span class="text-4xl font-extrabold text-white tracking-tight">${scores.previous ?? '—'}</span>
+            <span class="text-xs font-bold bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full border border-purple-500/30">${scores.previousGrade ?? '—'}</span>
+          </div>
         </div>
-        <div class="cr-score-divider">
-          <span class="cr-delta-val" style="color:${deltaColor}">${scores.deltaLabel || '—'}</span>
-          <span class="cr-delta-arrow" style="color:${deltaColor}">${delta > 0 ? '▲' : delta < 0 ? '▼' : '●'}</span>
-        </div>
-        <div class="cr-score-side">
-          <span class="cr-score-role">Previous Scan</span>
-          <span class="cr-score-num">${scores.previous ?? '—'}</span>
-          <span class="cr-grade-pill" style="background:rgba(168,85,247,0.15);color:#c084fc;border-color:rgba(168,85,247,0.3)">${scores.previousGrade ?? '—'}</span>
-        </div>
-      </div>
 
-      <!-- Summary Pills -->
-      <div class="cr-summary-pills">
-        <div class="cr-pill fixed">  <span>${summary.fixed     ?? 0}</span><span>Fixed</span></div>
-        <div class="cr-pill new">    <span>${summary.newIssues ?? 0}</span><span>New Issues</span></div>
-        <div class="cr-pill worse">  <span>${summary.worsened  ?? 0}</span><span>Worsened</span></div>
-        <div class="cr-pill better"> <span>${summary.improved  ?? 0}</span><span>Improved</span></div>
-        <div class="cr-pill remain"> <span>${summary.remaining ?? 0}</span><span>Remaining</span></div>
-      </div>
+        <!-- Summary Pills -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <div class="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-xl text-center flex flex-col gap-2 hover:bg-emerald-500/15 transition-all">
+            <span class="text-2xl font-extrabold text-emerald-400">${summary.fixed ?? 0}</span>
+            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Fixed</span>
+          </div>
+          <div class="bg-red-500/10 border border-red-500/20 p-5 rounded-xl text-center flex flex-col gap-2 hover:bg-red-500/15 transition-all">
+            <span class="text-2xl font-extrabold text-red-400">${summary.newIssues ?? 0}</span>
+            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Issues</span>
+          </div>
+          <div class="bg-orange-500/10 border border-orange-500/20 p-5 rounded-xl text-center flex flex-col gap-2 hover:bg-orange-500/15 transition-all">
+            <span class="text-2xl font-extrabold text-orange-400">${summary.worsened ?? 0}</span>
+            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Worsened</span>
+          </div>
+          <div class="bg-blue-500/10 border border-blue-500/20 p-5 rounded-xl text-center flex flex-col gap-2 hover:bg-blue-500/15 transition-all">
+            <span class="text-2xl font-extrabold text-blue-400">${summary.improved ?? 0}</span>
+            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Improved</span>
+          </div>
+          <div class="bg-amber-500/10 border border-amber-500/20 p-5 rounded-xl text-center flex flex-col gap-2 hover:bg-amber-500/15 transition-all col-span-2 sm:col-span-1">
+            <span class="text-2xl font-extrabold text-amber-400">${summary.remaining ?? 0}</span>
+            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Remaining</span>
+          </div>
+        </div>
 
-      <!-- Change Groups -->
-      <div class="cr-groups">
-        ${renderGroup(changes.fixed,     'pill-fixed',   '#34d399', '✅ Fixed')}
-        ${renderGroup(changes.newIssues, 'pill-new',     '#f87171', '🔴 Regressions')}
-        ${renderGroup(changes.worsened,  'pill-worse',   '#fb923c', '📉 Worsened')}
-        ${renderGroup(changes.improved,  'pill-better',  '#60a5fa', '📈 Improved')}
-        ${renderGroup(changes.remaining, 'pill-remain',  '#fbbf24', '⚠️ Remaining')}
+        <!-- Change Groups -->
+        <div class="space-y-10 pt-8 border-t border-white/10">
+          ${renderGroup(changes.fixed,     'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', 'border-emerald-500', '✅ Fixed')}
+          ${renderGroup(changes.newIssues, 'bg-red-500/10 text-red-400 border border-red-500/20',             'border-red-500',     '🔴 Regression')}
+          ${renderGroup(changes.worsened,  'bg-orange-500/10 text-orange-400 border border-orange-500/20',       'border-orange-500',  '📉 Worsened')}
+          ${renderGroup(changes.improved,  'bg-blue-500/10 text-blue-400 border border-blue-500/20',           'border-blue-500',    '📈 Improved')}
+          ${renderGroup(changes.remaining, 'bg-amber-500/10 text-amber-400 border border-amber-500/20',         'border-amber-500',   '⚠️ Remaining')}
+        </div>
       </div>
     `;
-  }
 
-
-  function renderAiTextInsights(text: string) {
-    const paragraphs = text
-      .split('\n\n')
-      .map(p => {
-        const trimmed = p.trim();
-        if (!trimmed) return '';
-        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
-          const listItems = trimmed
-            .split('\n')
-            .map(li => `<li>${li.replace(/^[-*]\s*/, '')}</li>`)
-            .join('');
-          return `<ul>${listItems}</ul>`;
-        }
-        if (trimmed.startsWith('#')) {
-          const level = (trimmed.match(/^#+/) || ['#'])[0].length;
-          const cleanText = trimmed.replace(/^#+\s*/, '');
-          return `<h${Math.min(level + 2, 6)}>${cleanText}</h${Math.min(level + 2, 6)}>`;
-        }
-        return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
-      })
-      .filter(Boolean)
-      .join('');
-
-    aiInsightsOutput.innerHTML = `<div class="ai-raw-text">${paragraphs}</div>`;
-  }
-</script>
-
-<!-- ───────── STYLES ───────── -->
-<style>
-  /* ── Tokens ── */
-  :root {
-    --bg-gradient: linear-gradient(145deg, #0b0f1a 0%, #141832 50%, #0f172a 100%);
-    --nav-bg: rgba(15, 23, 42, 0.72);
-    --card-bg: rgba(30, 41, 59, 0.42);
-    --card-border: rgba(255, 255, 255, 0.07);
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --accent: #6366f1;
-    --accent-hover: #818cf8;
-    --accent-glow: rgba(99, 102, 241, 0.35);
-    --success: #34d399;
-    --success-bg: rgba(52, 211, 153, 0.12);
-    --error: #f87171;
-    --error-bg: rgba(248, 113, 113, 0.12);
-    --info: #60a5fa;
-    --info-bg: rgba(96, 165, 250, 0.10);
-    --warning: #fbbf24;
-    --warning-bg: rgba(251, 191, 36, 0.10);
-    --radius-sm: 10px;
-    --radius-md: 16px;
-    --radius-lg: 24px;
-    --font: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  }
-
-  /* ── Navbar ── */
-  .navbar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    background: var(--nav-bg);
-    backdrop-filter: blur(18px) saturate(1.4);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4);
-    border-bottom: 1px solid var(--card-border);
-  }
-
-  .nav-inner {
-    max-width: 1140px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 28px;
-    height: 64px;
-  }
-
-  .nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: var(--text-primary);
-  }
-
-  .brand-text {
-    font-family: var(--font);
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #c7d2fe 0%, #818cf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-decoration: none;
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: all 0.2s;
-  }
-
-  .nav-link:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--card-border);
-  }
-
-  .nav-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .nav-avatar {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(99, 102, 241, 0.4);
-  }
-
-  .nav-name {
-    font-family: var(--font);
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
-  }
-
-  /* ── Main ── */
-  .results-main {
-    min-height: 100vh;
-    background: var(--bg-gradient);
-    font-family: var(--font);
-    color: var(--text-primary);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 104px 24px 60px;
-  }
-
-  /* ── Content wrapper ── */
-  .content-wrapper {
-    width: 100%;
-    max-width: 720px;
-    animation: fadeUp 0.5s ease both;
-  }
-
-  .section-header {
-    margin-bottom: 28px;
-  }
-
-  .section-header h1 {
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    margin: 0 0 6px;
-    background: linear-gradient(135deg, #e0e7ff, #c7d2fe 40%, #818cf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .section-subtitle {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin: 0;
-  }
-
-  .audit-id {
-    font-family: monospace;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 2px 6px;
-    border-radius: 4px;
-  }
-
-  /* ── Glass card ── */
-  .glass-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(20px) saturate(1.3);
-    -webkit-backdrop-filter: blur(20px) saturate(1.3);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-lg);
-    padding: 36px;
-    box-shadow:
-      0 4px 30px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
-
-  /* ── Score ring ── */
-  .score-ring-container {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 32px;
-    padding: 24px;
-    background: rgba(15, 23, 42, 0.4);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--card-border);
-  }
-
-  .score-ring {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    flex-shrink: 0;
-  }
-
-  .score-ring svg {
-    transform: rotate(-90deg);
-    width: 100%; height: 100%;
-  }
-
-  .ring-bg {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.06);
-    stroke-width: 8;
-  }
-
-  .ring-progress {
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 8;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s ease;
-  }
-
-  .score-value {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .score-number {
-    font-size: 32px;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  .score-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-
-  .grade-container {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .grade-badge {
-    font-size: 36px;
-    font-weight: 800;
-    padding: 4px 20px;
-    border-radius: 12px;
-    border: 2px solid;
-    text-align: center;
-    width: fit-content;
-  }
-
-  .grade-label {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-  }
-
-  /* ── Counts Grid ── */
-  .counts-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .count-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px;
-    background: rgba(15, 23, 42, 0.3);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--card-border);
-  }
-
-  .count-num {
-    font-size: 24px;
-    font-weight: 700;
-  }
-
-  .count-lbl {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-
-  .count-card.error .count-num   { color: var(--error); }
-  .count-card.warning .count-num { color: var(--warning); }
-  .count-card.pass .count-num    { color: var(--success); }
-
-  /* ── Checks Groups ── */
-  .checks-group-wrapper h3 {
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-secondary);
-    margin: 24px 0 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    padding-bottom: 6px;
-  }
-
-  .results-checks {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .check-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--card-border);
-    background: rgba(15, 23, 42, 0.3);
-  }
-
-  .check-item.pass .check-icon    { color: var(--success); }
-  .check-item.warning .check-icon { color: var(--warning); }
-  .check-item.error .check-icon   { color: var(--error); }
-
-  .check-icon {
-    font-size: 16px;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-
-  .check-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .check-name {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .check-msg {
-    font-size: 13px;
-    color: var(--text-muted);
-    line-height: 1.5;
-  }
-
-  .empty-group {
-    padding: 16px;
-    font-size: 13px;
-    color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: var(--radius-sm);
-    text-align: center;
-    border: 1px dashed rgba(255,255,255,0.05);
-  }
-
-  /* ── Page loader ── */
-  .loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding-top: 30vh;
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-
-  .spinner {
-    width: 42px; height: 42px;
-    border: 3px solid rgba(255, 255, 255, 0.08);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.75s linear infinite;
-  }
-
-  /* ── Animations ── */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .hidden { display: none !important; }
-
-  /* ── AI Insights Card ── */
-  .ai-card {
-    margin-top: 28px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .ai-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent) 0%, #a855f7 50%, var(--success) 100%);
-  }
-
-  .ai-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-
-  .ai-title-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text-primary);
-  }
-
-  .ai-title-group h2 {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-  }
-
-  .ai-sparkle-icon {
-    color: #a855f7;
-    animation: pulse 2s infinite;
-  }
-
-  .ai-badge {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 4px 10px;
-    border-radius: 99px;
-    background: rgba(168, 85, 247, 0.15);
-    color: #c084fc;
-    border: 1px solid rgba(168, 85, 247, 0.3);
-  }
-
-  .ai-desc {
-    font-size: 14px;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 0 0 24px 0;
-  }
-
-  .ai-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 14px;
-    border-radius: var(--radius-sm);
-    border: none;
-    background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
-  }
-
-  .ai-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(168, 85, 247, 0.35);
-    background: linear-gradient(135deg, var(--accent-hover) 0%, #b55fe6 100%);
-  }
-
-  .ai-btn:disabled {
-    background: #1e293b;
-    color: var(--text-muted);
-    border: 1px solid var(--card-border);
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .ai-btn-spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-  }
-
-  .ai-content {
-    margin-top: 24px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding-top: 24px;
-    animation: fadeUp 0.4s ease both;
-  }
-
-  .ai-markdown {
-    color: var(--text-primary);
-  }
-
-  .ai-overall-summary {
-    background: rgba(168, 85, 247, 0.05);
-    border: 1px solid rgba(168, 85, 247, 0.15);
-    border-radius: var(--radius-sm);
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-
-  .summary-section h5 {
-    color: #c084fc;
-    margin: 0 0 6px 0;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .summary-section p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
-
-  /* ── AI Priorities Card ── */
-  .ai-priorities-card {
-    background: rgba(251, 191, 36, 0.04);
-    border: 1px solid rgba(251, 191, 36, 0.15);
-    border-radius: var(--radius-sm);
-    padding: 18px;
-    margin-bottom: 20px;
-    animation: fadeUp 0.4s ease both;
-  }
-
-  .priorities-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .priorities-header h5 {
-    color: #fbbf24;
-    margin: 0;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .priorities-list {
-    margin: 0;
-    padding-left: 20px;
-    color: var(--text-secondary);
-    font-size: 13.5px;
-    line-height: 1.6;
-  }
-
-  .priorities-list li {
-    margin-bottom: 6px;
-  }
-  
-  .priorities-list li:last-child {
-    margin-bottom: 0;
-  }
-
-  .ai-rule-id {
-    font-family: monospace;
-    font-size: 11px;
-    color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.05);
-    padding: 1px 5px;
-    border-radius: 4px;
-    width: fit-content;
-  }
-
-  .ai-insight-desc {
-    margin-bottom: 14px;
-  }
-
-  .ai-insight-desc h5 {
-    margin: 0 0 4px 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: #c084fc;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .ai-insight-desc p {
-    margin: 0;
-    font-size: 13.5px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
-
-  /* ── AI Example Code ── */
-  .ai-insight-example {
-    margin-top: 14px;
-  }
-
-  .ai-insight-example h5 {
-    margin: 0 0 6px 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--info);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .example-pre {
-    background: #0f172a;
-    border: 1px solid var(--card-border);
-    border-radius: 6px;
-    padding: 12px;
-    margin: 0;
-    overflow-x: auto;
-  }
-
-  .example-pre code {
-    font-family: 'Fira Code', 'Courier New', Courier, monospace;
-    font-size: 12px;
-    color: #38bdf8;
-    line-height: 1.5;
-  }
-
-  .ai-insights-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .ai-insight-card {
-    background: rgba(15, 23, 42, 0.3);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-sm);
-    padding: 18px;
-    transition: border-color 0.2s ease;
-  }
-
-  .ai-insight-card:hover {
-    border-color: rgba(168, 85, 247, 0.3);
-  }
-
-  .ai-insight-title-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .ai-insight-number {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(168, 85, 247, 0.15);
-    color: #c084fc;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .ai-insight-title-row h4 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  .ai-insight-desc {
-    margin: 0 0 14px 0;
-    font-size: 13.5px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
-
-  .ai-insight-action {
-    background: rgba(52, 211, 153, 0.04);
-    border-left: 3px solid var(--success);
-    border-radius: 0 6px 6px 0;
-    padding: 10px 14px;
-  }
-
-  .ai-insight-action h5 {
-    margin: 0 0 4px 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--success);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .ai-insight-action p {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--text-secondary);
-  }
-
-  .ai-raw-text {
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
-
-  .ai-raw-text ul {
-    margin: 8px 0;
-    padding-left: 20px;
-  }
-
-  .ai-raw-text li {
-    margin: 4px 0;
-  }
-
-  .ai-raw-text h3, .ai-raw-text h4, .ai-raw-text h5 {
-    color: var(--text-primary);
-    margin: 16px 0 8px 0;
-  }
-
-  .optimiser-controls {
-    display: flex;
-    gap: 12px;
-    margin: 20px 0;
-    align-items: center;
-  }
-  
-  .optimiser-select {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 8px;
-    background: rgba(15, 23, 42, 0.4);
-    border: 1px solid var(--card-border);
-    color: var(--text-primary);
-    font-family: var(--font);
-    font-size: 14px;
-    outline: none;
-    appearance: none;
-    transition: all 0.2s;
-  }
-  
-  .optimiser-select:focus {
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  }
-  
-  .optimiser-select option {
-    background: #0f172a;
-    color: var(--text-primary);
-  }
-
-  @media (max-width: 600px) {
-    .optimiser-controls {
-      flex-direction: column;
-      align-items: stretch;
+    if (window.lucide) {
+      window.lucide.createIcons();
     }
   }
 
-  /* ── Keyframes ── */
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.05); }
-  }
-
-  /* ══════════════════════════════════════════
-     REPORT COMPARISON SECTION
-  ══════════════════════════════════════════ */
-
-  .compare-card {
-    margin-top: 28px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .compare-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #6366f1 0%, #38bdf8 50%, #34d399 100%);
-  }
-
-  .compare-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-
-  .compare-title-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .compare-icon {
-    color: #38bdf8;
-    flex-shrink: 0;
-  }
-
-  .compare-title-group h2 {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-    color: var(--text-primary);
-  }
-
-  .compare-badge {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 4px 10px;
-    border-radius: 99px;
-    background: rgba(56, 189, 248, 0.12);
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.28);
-  }
-
-  .compare-desc {
-    font-size: 14px;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 0 0 20px 0;
-  }
-
-  /* ── Skeleton ── */
-  .compare-skeleton {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 4px 0 12px;
-  }
-
-  .cskel-row {
-    height: 52px;
-    border-radius: var(--radius-sm);
-    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-
-  /* ── Empty state ── */
-  .compare-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 28px 16px;
-    color: var(--text-muted);
-    font-size: 13px;
-    text-align: center;
-  }
-
-  /* ── Two-column wrapper ── */
-  .compare-cols-wrapper {
-    margin-bottom: 20px;
-  }
-
-  .compare-skeleton-full {
-    width: 100%;
-  }
-
-  .compare-two-cols {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 14px;
-    align-items: start;
-    margin-bottom: 20px;
-  }
-
-  .compare-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-  }
-
-  .compare-col-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--card-border);
-    font-size: 12.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .scan-a-header {
-    background: rgba(56, 189, 248, 0.07);
-    color: #38bdf8;
-    border-top: 2px solid #38bdf8;
-  }
-
-  .scan-b-header {
-    background: rgba(168, 85, 247, 0.07);
-    color: #c084fc;
-    border-top: 2px solid #c084fc;
-  }
-
-  .compare-col-label {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    background: rgba(56, 189, 248, 0.18);
-    color: #38bdf8;
-    font-size: 13px;
-    font-weight: 800;
-    flex-shrink: 0;
-  }
-
-  .scan-b-label {
-    background: rgba(168, 85, 247, 0.18);
-    color: #c084fc;
-  }
-
-  .compare-col-hint {
-    margin-left: auto;
-    font-size: 10.5px;
-    font-weight: 500;
-    text-transform: none;
-    letter-spacing: 0;
-    opacity: 0.6;
-    max-width: 90px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .compare-col-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    max-height: 260px;
-    overflow-y: auto;
-    background: rgba(10, 15, 30, 0.3);
-  }
-
-  .compare-col-list::-webkit-scrollbar { width: 4px; }
-  .compare-col-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-  /* VS divider */
-  .compare-vs-divider {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-top: 36px;
-  }
-
-  .compare-vs-divider span {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--card-border);
-    border-radius: 99px;
-    padding: 5px 10px;
-  }
-
-  /* Current-page tag inside a scan row */
-  .compare-current-tag {
-    display: inline-block;
-    font-size: 9.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 1px 5px;
-    border-radius: 4px;
-    background: rgba(99, 102, 241, 0.2);
-    color: #818cf8;
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    vertical-align: middle;
-    margin-left: 4px;
-  }
-
-  .compare-scan-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 13px 16px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--card-border);
-    background: rgba(15, 23, 42, 0.35);
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    user-select: none;
-  }
-
-  .compare-scan-row:hover {
-    border-color: rgba(56, 189, 248, 0.3);
-    background: rgba(56, 189, 248, 0.04);
-  }
-
-  .compare-scan-row.selected {
-    border-color: rgba(56, 189, 248, 0.5);
-    background: rgba(56, 189, 248, 0.08);
-  }
-
-  .compare-scan-checkbox {
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .cscan-radio {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .custom-radio {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid rgba(148, 163, 184, 0.4);
-    background: transparent;
-    transition: border-color 0.2s, background 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .compare-scan-row.selected .custom-radio {
-    border-color: #38bdf8;
-    background: #38bdf8;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
-  }
-
-  .compare-scan-row.selected .custom-radio::after {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: white;
-  }
-
-  .compare-scan-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    overflow: hidden;
-  }
-
-  .compare-scan-url {
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .compare-scan-date {
-    font-size: 11.5px;
-    color: var(--text-muted);
-  }
-
-  .compare-scan-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 99px;
-    background: rgba(52, 211, 153, 0.12);
-    color: #34d399;
-    border: 1px solid rgba(52, 211, 153, 0.25);
-    flex-shrink: 0;
-  }
-
-  /* ── Compare Button ── */
-  .compare-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 13px;
-    border-radius: var(--radius-sm);
-    border: none;
-    background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.22);
-    margin-top: 4px;
-  }
-
-  .compare-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(14, 165, 233, 0.32);
-  }
-
-  .compare-btn:disabled {
-    background: #1e293b;
-    color: var(--text-muted);
-    border: 1px solid var(--card-border);
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .compare-btn-spinner {
-    width: 17px;
-    height: 17px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-  }
-
-  /* ── Comparison Result ── */
-  .compare-result {
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    animation: fadeUp 0.4s ease both;
-  }
-
-  /* Score delta row */
-  .compare-score-delta {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 20px;
-    background: rgba(15, 23, 42, 0.45);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--card-border);
-    margin-bottom: 22px;
-    flex-wrap: wrap;
-  }
-
-  .csd-prev, .csd-curr {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    flex: 1;
-  }
-
-  .csd-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-  }
-
-  .csd-value {
-    font-size: 30px;
-    font-weight: 800;
-    color: var(--text-primary);
-  }
-
-  .csd-arrow {
-    font-size: 24px;
-    font-weight: 700;
-  }
-
-  .csd-diff {
-    padding: 6px 18px;
-    border-radius: 99px;
-    border: 1px solid;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-  }
-
-  /* Breakdown grid */
-  .compare-breakdown-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-
-  .compare-breakdown-col {
-    background: rgba(15, 23, 42, 0.3);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-  }
-
-  .cbcol-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 11px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    border-bottom: 1px solid var(--card-border);
-  }
-
-  .cbcol-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .cbcol-count {
-    margin-left: auto;
-    font-size: 13px;
-    font-weight: 700;
-    padding: 1px 8px;
-    border-radius: 99px;
-  }
-
-  .cbcol-header.fixed   { color: #34d399; border-top: 2px solid #34d399; }
-  .cbcol-header.fixed .cbcol-dot   { background: #34d399; }
-  .cbcol-header.fixed .cbcol-count { background: rgba(52,211,153,0.15); color: #34d399; }
-
-  .cbcol-header.new     { color: #f87171; border-top: 2px solid #f87171; }
-  .cbcol-header.new .cbcol-dot     { background: #f87171; }
-  .cbcol-header.new .cbcol-count   { background: rgba(248,113,113,0.15); color: #f87171; }
-
-  .cbcol-header.remaining { color: #fbbf24; border-top: 2px solid #fbbf24; }
-  .cbcol-header.remaining .cbcol-dot { background: #fbbf24; }
-  .cbcol-header.remaining .cbcol-count { background: rgba(251,191,36,0.15); color: #fbbf24; }
-
-  .cbcol-header.improved { color: #60a5fa; border-top: 2px solid #60a5fa; }
-  .cbcol-header.improved .cbcol-dot { background: #60a5fa; }
-  .cbcol-header.improved .cbcol-count { background: rgba(96,165,250,0.15); color: #60a5fa; }
-
-  .cbcol-header.worsened { color: #fb923c; border-top: 2px solid #fb923c; }
-  .cbcol-header.worsened .cbcol-dot { background: #fb923c; }
-  .cbcol-header.worsened .cbcol-count { background: rgba(251,146,60,0.15); color: #fb923c; }
-
-  .cbcol-list {
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 220px;
-    overflow-y: auto;
-  }
-
-  .cbcol-list::-webkit-scrollbar { width: 4px; }
-  .cbcol-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-  .compare-rule-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 7px 8px;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.04);
-  }
-
-  .compare-rule-icon {
-    font-size: 13px;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-
-  .compare-rule-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .compare-rule-name {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.3;
-  }
-
-  .compare-rule-msg {
-    font-size: 11.5px;
-    color: var(--text-muted);
-    line-height: 1.4;
-  }
-
-  .compare-empty-list {
-    font-size: 12px;
-    color: var(--text-muted);
-    padding: 8px;
-    text-align: center;
-    font-style: italic;
-  }
-
-  /* ════════════════════════════════════════════
-     RICH COMPARISON RESULT STYLES
-  ════════════════════════════════════════════ */
-
-  /* Verdict banner */
-  .cr-verdict {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    border-radius: var(--radius-sm);
-    border: 1px solid;
-    margin-bottom: 18px;
-    animation: fadeUp 0.3s ease both;
-  }
-  .cr-verdict-emoji { font-size: 24px; flex-shrink: 0; }
-  .cr-verdict-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 14px;
-    color: var(--text-primary);
-  }
-  .cr-verdict-text strong { font-weight: 700; }
-  .cr-verdict-text span   { font-size: 12px; color: var(--text-muted); }
-
-  /* Score block */
-  .cr-score-block {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 20px;
-    background: rgba(15,23,42,0.45);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
-  }
-  .cr-score-side {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  .cr-score-role {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-muted);
-  }
-  .cr-score-num {
-    font-size: 42px;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--text-primary);
-  }
-  .cr-grade-pill {
-    font-size: 13px;
-    font-weight: 700;
-    padding: 3px 12px;
-    border-radius: 99px;
-    border: 1px solid;
-  }
-  .cr-score-divider {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  .cr-delta-val   { font-size: 12px; font-weight: 700; text-align: center; }
-  .cr-delta-arrow { font-size: 22px; font-weight: 800; }
-
-  /* Summary pills row */
-  .cr-summary-pills {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 22px;
-  }
-  .cr-pill {
-    flex: 1;
-    min-width: 70px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px 8px 8px;
-    border-radius: var(--radius-sm);
-    border: 1px solid;
-    gap: 3px;
-  }
-  .cr-pill span:first-child { font-size: 22px; font-weight: 800; line-height: 1; }
-  .cr-pill span:last-child  { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .cr-pill.fixed  { background: rgba(52,211,153,0.08);  border-color: rgba(52,211,153,0.25);  color: #34d399; }
-  .cr-pill.new    { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.25); color: #f87171; }
-  .cr-pill.worse  { background: rgba(251,146,60,0.08);  border-color: rgba(251,146,60,0.25);  color: #fb923c; }
-  .cr-pill.better { background: rgba(96,165,250,0.08);  border-color: rgba(96,165,250,0.25);  color: #60a5fa; }
-  .cr-pill.remain { background: rgba(251,191,36,0.08);  border-color: rgba(251,191,36,0.25);  color: #fbbf24; }
-
-  /* Change groups */
-  .cr-groups { display: flex; flex-direction: column; gap: 12px; }
-
-  .cr-group {
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    animation: fadeUp 0.3s ease both;
-  }
-  .cr-group-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: rgba(15,23,42,0.5);
-    border-bottom: 1px solid var(--card-border);
-    border-left: 3px solid transparent;
-  }
-  .cr-group-icon  { font-size: 16px; flex-shrink: 0; }
-  .cr-group-label { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-  .cr-group-desc  { font-size: 11.5px; color: var(--text-muted); flex: 1; }
-  .cr-group-count {
-    font-size: 12px;
-    font-weight: 700;
-    padding: 2px 9px;
-    border-radius: 99px;
-    flex-shrink: 0;
-  }
-  .cr-group-items { display: flex; flex-direction: column; gap: 0; }
-
-  /* Rule card */
-  .cr-rule-card {
-    padding: 14px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: background 0.15s;
-  }
-  .cr-rule-card:last-child { border-bottom: none; }
-  .cr-rule-card:hover      { background: rgba(255,255,255,0.02); }
-
-  .cr-rule-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .cr-status-pill {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 99px;
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
-  .pill-fixed  { background: rgba(52,211,153,0.15);  color: #34d399; }
-  .pill-new    { background: rgba(248,113,113,0.15); color: #f87171; }
-  .pill-worse  { background: rgba(251,146,60,0.15);  color: #fb923c; }
-  .pill-better { background: rgba(96,165,250,0.15);  color: #60a5fa; }
-  .pill-remain { background: rgba(251,191,36,0.15);  color: #fbbf24; }
-
-  .cr-rule-title    { font-size: 13.5px; font-weight: 600; color: var(--text-primary); flex: 1; min-width: 0; }
-  .cr-category-tag  {
-    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-    padding: 2px 7px; border-radius: 4px;
-    background: rgba(255,255,255,0.07); color: var(--text-muted);
-  }
-  .cr-score-delta   { font-size: 12px; font-weight: 700; flex-shrink: 0; }
-
-  /* Before / After */
-  .cr-rule-before-after {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    background: rgba(10,15,30,0.35);
-    border-radius: 8px;
-    padding: 10px 12px;
-  }
-  .cr-ba-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .cr-ba-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    font-weight: 600;
-  }
-  .cr-ba-status {
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .cr-ba-status.pass { color: #34d399; }
-  .cr-ba-status.fail { color: #f87171; }
-  .cr-ba-msg {
-    font-size: 12px;
-    color: var(--text-muted);
-    line-height: 1.4;
-  }
-  .cr-ba-arrow {
-    font-size: 16px;
-    color: var(--text-muted);
-    padding-top: 18px;
-    flex-shrink: 0;
-  }
-
-  /* Recommendation */
-  .cr-recommendation {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 8px 12px;
-    background: rgba(99,102,241,0.06);
-    border-left: 3px solid rgba(99,102,241,0.4);
-    border-radius: 0 6px 6px 0;
-  }
-  .cr-rec-label { font-size: 11px; font-weight: 700; color: #818cf8; }
-  .cr-rec-text  { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
-
-  /* ── AI Executive Summary Card ── */
-  .cr-ai-summary {
-    border: 1px solid rgba(168, 85, 247, 0.25);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    margin-bottom: 20px;
-    animation: fadeUp 0.35s ease both;
-    position: relative;
-  }
-  .cr-ai-summary::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #34d399);
-  }
-  .cr-ai-summary-header {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 12px 16px;
-    background: rgba(168, 85, 247, 0.07);
-    border-bottom: 1px solid rgba(168, 85, 247, 0.15);
-    color: #c084fc;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .cr-ai-badge {
-    margin-left: auto;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 2px 8px;
-    border-radius: 99px;
-    background: rgba(168, 85, 247, 0.15);
-    color: #c084fc;
-    border: 1px solid rgba(168, 85, 247, 0.3);
-  }
-  .cr-ai-body {
-    padding: 16px 18px;
-    background: rgba(10, 15, 30, 0.25);
-  }
-  .cr-ai-exec-summary {
-    font-size: 14px;
-    color: var(--text-primary);
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
-  .cr-ai-recs {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .cr-ai-rec {
-    background: rgba(255,255,255,0.03);
-    border-radius: var(--radius-sm);
-    padding: 14px;
-    border: 1px solid rgba(255,255,255,0.05);
-  }
-  .cr-ai-rec-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-  .cr-ai-rec-num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: rgba(168, 85, 247, 0.2);
-    color: #c084fc;
-    font-size: 11px;
-    font-weight: 800;
-  }
-  .cr-ai-h {
-    color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 700;
-    margin: 0;
-  }
-  .cr-ai-p {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 0 0 6px;
-  }
-  .cr-ai-p:last-of-type { margin-bottom: 0; }
-  .cr-ai-p strong { color: var(--text-primary); }
-  
-  .cr-ai-code {
-    background: rgba(15, 23, 42, 0.7);
-    border: 1px solid var(--card-border);
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-family: 'Fira Code', monospace;
-    font-size: 12px;
-    color: #38bdf8;
-    overflow-x: auto;
-    margin: 10px 0 0 0;
-  }
-
-  /* ── Responsive ── */
-  @media (max-width: 600px) {
-    .nav-inner { padding: 0 16px; }
-    .glass-card { padding: 24px; }
-    .section-header h1 { font-size: 22px; }
-    .nav-name { display: none; }
-    .score-ring-container { flex-direction: column; align-items: center; text-align: center; }
-    .counts-grid { grid-template-columns: 1fr; }
-    .compare-breakdown-grid { grid-template-columns: 1fr; }
-    .compare-score-delta { flex-direction: column; gap: 12px; align-items: center; }
-    .compare-two-cols { grid-template-columns: 1fr; }
-    .compare-vs-divider { padding-top: 0; padding-bottom: 0; }
-  }
-</style>
-
+  // Accordion Expand/Collapse Logic
+  const toggleErrors = document.getElementById('toggle-errors');
+  const errorsChecksDiv = document.getElementById('errors-checks');
+  const chevronErrors = document.getElementById('chevron-errors');
+
+  const toggleWarnings = document.getElementById('toggle-warnings');
+  const warningsChecksDiv = document.getElementById('warnings-checks');
+  const chevronWarnings = document.getElementById('chevron-warnings');
+
+  const togglePassed = document.getElementById('toggle-passed');
+  const passedChecksDiv = document.getElementById('passed-checks');
+  const chevronPassed = document.getElementById('chevron-passed');
+
+  function toggleSection(container: HTMLElement | null, chevron: HTMLElement | null) {
+    if (!container || !chevron) return;
+    const isHidden = container.classList.contains('hidden');
+    if (isHidden) {
+      container.classList.remove('hidden');
+      chevron.style.transform = 'rotate(0deg)';
+    } else {
+      container.classList.add('hidden');
+      chevron.style.transform = 'rotate(-90deg)';
+    }
+  }
+
+  if (toggleErrors && errorsChecksDiv && chevronErrors) {
+    toggleErrors.addEventListener('click', () => toggleSection(errorsChecksDiv, chevronErrors));
+  }
+  if (toggleWarnings && warningsChecksDiv && chevronWarnings) {
+    toggleWarnings.addEventListener('click', () => toggleSection(warningsChecksDiv, chevronWarnings));
+  }
+  if (togglePassed && passedChecksDiv && chevronPassed) {
+    togglePassed.addEventListener('click', () => toggleSection(passedChecksDiv, chevronPassed));
+  }
+
+  // Summary Card Clicking Bindings
+  const cardErrorsSummary = document.getElementById('card-errors-summary');
+  const cardWarningsSummary = document.getElementById('card-warnings-summary');
+  const cardPassedSummary = document.getElementById('card-passed-summary');
+
+  if (cardErrorsSummary) {
+    cardErrorsSummary.addEventListener('click', () => {
+      if (errorsChecksDiv?.classList.contains('hidden')) {
+        toggleSection(errorsChecksDiv, chevronErrors);
+      }
+      errorsChecksDiv?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+  if (cardWarningsSummary) {
+    cardWarningsSummary.addEventListener('click', () => {
+      if (warningsChecksDiv?.classList.contains('hidden')) {
+        toggleSection(warningsChecksDiv, chevronWarnings);
+      }
+      warningsChecksDiv?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+  if (cardPassedSummary) {
+    cardPassedSummary.addEventListener('click', () => {
+      if (passedChecksDiv?.classList.contains('hidden')) {
+        toggleSection(passedChecksDiv, chevronPassed);
+      }
+      passedChecksDiv?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  // Regenerate AI Recommendations listener
+  const regenerateAiBtn = document.getElementById('regenerate-ai-btn');
+  if (regenerateAiBtn) {
+    regenerateAiBtn.addEventListener('click', () => {
+      generateAiRecommendations();
+    });
+  }
+</script>
