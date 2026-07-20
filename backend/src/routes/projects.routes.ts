@@ -140,4 +140,59 @@ projectRouter.get("/api/project/info", requireAuth, async (req, res) => {
     }
 })
 
+projectRouter.get("/api/v1/trentchart", requireAuth, async (req, res) => {
+    let projectid = (req.query.projectid as string) || req.body?.projectid;
+    const projectName = (req.query.project_name as string) || (req.headers.project_name as string);
+
+    if (!projectid && projectName) {
+        const { data: pData } = await supabase.from("projects").select("id").eq("name", projectName).maybeSingle();
+        if (pData?.id) {
+            projectid = pData.id;
+        }
+    }
+
+    if (!projectid) {
+        return res.status(400).json("projectid or project_name is required");
+    }
+
+    try {
+        const { data: scanIDList, error: scanIDError } = await supabase
+            .from("scans")
+            .select("id, started_at, created_at")
+            .eq("project_id", projectid);
+
+        if (scanIDError) {
+            return res.status(500).json({ error: scanIDError.message });
+        }
+
+        const scanArray = await Promise.all(
+            (scanIDList || []).map(async (i) => {
+                const { data, error } = await supabase
+                    .from("scan_results")
+                    .select("seo, created_at")
+                    .eq("scan_id", i.id)
+                    .maybeSingle();
+
+                const timeStamp = data?.created_at || i.started_at || i.created_at;
+                return {
+                    score: data?.seo?.score ?? 0,
+                    created_at: timeStamp || null
+                };
+            })
+        );
+
+        scanArray.sort((a, b) => {
+            const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return timeA - timeB;
+        });
+
+        return res.status(200).json({ scores: scanArray });
+    }
+    catch (error) {
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+
+})
+
 export default projectRouter;
